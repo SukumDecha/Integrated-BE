@@ -6,11 +6,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import sit.int202.ecommerce.dto.SaleItemGalleryResponse;
 import sit.int202.ecommerce.model.SaleItem;
 import sit.int202.ecommerce.service.SaleItemService;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/v1/sale-item")
+@RequestMapping("/v1/sale-items")
 public class SaleItemController {
 
     private final SaleItemService saleItemService;
@@ -26,7 +29,7 @@ public class SaleItemController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllSaleItems() {
+    public ResponseEntity<List<SaleItemGalleryResponse>> getAllSaleItems() {
         var saleitems = saleItemService.getAllSaleItems();
         return ResponseEntity.ok(saleitems);
     }
