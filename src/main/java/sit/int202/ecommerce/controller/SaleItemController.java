@@ -25,5 +25,11 @@ public class SaleItemController {
         return ResponseEntity.ok(saleitem);
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAllSaleItems() {
+        var saleitems = saleItemService.getAllSaleItems();
+        return ResponseEntity.ok(saleitems);
+    }
+
 
 }
