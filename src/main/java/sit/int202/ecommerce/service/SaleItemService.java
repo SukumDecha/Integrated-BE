@@ -1,4 +1,4 @@
 package sit.int202.ecommerce.service;
 
-public class ProductServiceImpl {
+public class SaleItemService {
 }
