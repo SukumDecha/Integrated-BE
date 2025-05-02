@@ -14,5 +14,11 @@ spring:
       path: /swagger-ui.html
     api-docs:
       path: /v3/api-docs
-
+    jackson:
+      time-zone: Asia/Bangkok
+      date-format: yyyy-MM-dd HH:mm:ss
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
 
