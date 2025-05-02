@@ -1,37 +1,38 @@
 package sit.int202.ecommerce.service;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import sit.int202.ecommerce.dto.SaleItemGalleryResponse;
+import sit.int202.ecommerce.dto.SaleItemResponse;
 import sit.int202.ecommerce.model.SaleItem;
 import sit.int202.ecommerce.repository.SaleItemRepository;
+import org.modelmapper.ModelMapper;
+import sit.int202.ecommerce.dto.SaleItemGalleryResponse;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 @Service
 public class SaleItemService {
-    private final SaleItemRepository repo;
-    private final ModelMapper mapper;
+    @Autowired
+    private SaleItemRepository saleItemRepository;
 
-    public SaleItemService(SaleItemRepository repo, ModelMapper mapper) {
-        this.repo = repo;
-        this.mapper = mapper;
-    }
+    @Autowired
+    private ModelMapper modelMapper;
 
     public List<SaleItemGalleryResponse> getAllSaleItems() {
-        return repo.findAllByOrderByCreatedOnAsc().stream()
-                .map(item -> mapper.map(item, SaleItemGalleryResponse.class))
+        return saleItemRepository.findAllByOrderByCreatedOnAsc().stream()
+                .map(item -> modelMapper.map(item, SaleItemGalleryResponse.class))
                 .collect(Collectors.toList());
     }
 
-    public SaleItem getSaleItemById(Integer id) {
-        SaleItem item = repo.findById(id).orElseThrow(
+    public SaleItemResponse getSaleItemById(Integer id) {
+        SaleItem item = saleItemRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("SaleItem not found")
         );
 
-        return item;
+       return modelMapper.map(item, SaleItemResponse.class);
     }
-}
 
+}
