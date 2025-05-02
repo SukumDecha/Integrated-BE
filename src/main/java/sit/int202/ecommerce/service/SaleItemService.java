@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.dto.SaleItemGalleryResponse;
+import sit.int202.ecommerce.exception.SaleItemNotFoundException;
 import sit.int202.ecommerce.model.SaleItem;
 import sit.int202.ecommerce.repository.SaleItemRepository;
 
@@ -28,7 +29,7 @@ public class SaleItemService {
 
     public SaleItem getSaleItemById(Integer id) {
         SaleItem item = repo.findById(id).orElseThrow(
-                () -> new EntityNotFoundException("SaleItem not found")
+                () -> new SaleItemNotFoundException("SaleItem not found for this id :: " + id)
         );
 
         return item;
