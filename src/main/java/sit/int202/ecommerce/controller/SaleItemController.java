@@ -7,24 +7,24 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import sit.int202.ecommerce.dto.SaleItemGalleryResponse;
-import sit.int202.ecommerce.dto.SaleItemResponse;
+import sit.int202.ecommerce.dto.response.SaleItemGalleryResponse;
+import sit.int202.ecommerce.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.service.SaleItemService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/itb-mshop/v1/sale-items")
 public class SaleItemController {
 
-    private final SaleItemService saleItemService;
-
-    public SaleItemController(SaleItemService saleItemService) {
-        this.saleItemService = saleItemService;
-    }
+    @Autowired
+    private SaleItemService saleItemService;
 
     @GetMapping ("/{id}")
     @Operation(
@@ -35,7 +35,7 @@ public class SaleItemController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Sale item found and returned successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = SaleItemResponse.class))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = SaleItemDetailResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
@@ -43,9 +43,9 @@ public class SaleItemController {
                     content = @Content
             )
     })
-    public ResponseEntity<?> getSimpleSaleItem(@Parameter(description = "ID of the sale item to be retrieved", required = true) @PathVariable Integer id) {
-        var saleitem = saleItemService.getSaleItemById(id);
-        return ResponseEntity.ok(saleitem);
+    public ResponseEntity<SaleItemDetailResponse> getSaleItemDetail(@Parameter(description = "ID of the sale item to be retrieved", required = true) @PathVariable Integer id) {
+        var saleItem = saleItemService.getSaleItemById(id);
+        return ResponseEntity.ok(saleItem);
     }
 
     @GetMapping
@@ -60,9 +60,9 @@ public class SaleItemController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = SaleItemGalleryResponse.class))
             )
     })
-    public ResponseEntity<?> getAllSaleItems() {
-        var saleitems = saleItemService.getAllSaleItems();
-        return ResponseEntity.ok(saleitems);
+    public ResponseEntity<List<SaleItemGalleryResponse>> getAllSaleItems() {
+        var saleItems = saleItemService.getAllSaleItems();
+        return ResponseEntity.ok(saleItems);
     }
 
 
