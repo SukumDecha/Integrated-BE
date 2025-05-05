@@ -1,6 +1,6 @@
-FROM openjdk:21-jdk-slim
+FROM openjdk:17
 WORKDIR /app
-COPY target/*.jar app.jar
+COPY . /app
+RUN ./mvnw clean package -DskipTests
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
-
+CMD ["java", "-jar", "target/ecommerce-0.0.1-SNAPSHOT.jar"]
