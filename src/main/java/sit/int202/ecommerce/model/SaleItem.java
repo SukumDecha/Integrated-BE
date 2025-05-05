@@ -34,6 +34,11 @@ public class SaleItem {
     private String model;
 
     @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "brandId", nullable = false)
+    private Brand brand;
+
+    @NotNull
     @Lob
     @Column(name = "description", nullable = false)
     private String description;
@@ -45,7 +50,7 @@ public class SaleItem {
     @Column(name = "ramGb")
     private Integer ramGb;
 
-    @Column(name = "screenSizeInch", precision = 3, scale = 1)
+    @Column(name = "screenSizeInch", precision = 3, scale = 2)
     private BigDecimal screenSizeInch;
 
     @Column(name = "storageGb")
