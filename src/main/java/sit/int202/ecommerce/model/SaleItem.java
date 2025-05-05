@@ -34,11 +34,6 @@ public class SaleItem {
     private String model;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brandId", nullable = false)
-    private Brand brand;
-
-    @NotNull
     @Lob
     @Column(name = "description", nullable = false,  columnDefinition = "TEXT")
     private String description;
