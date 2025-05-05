@@ -1,4 +1,4 @@
-package sit.int202.ecommerce.dto;
+package sit.int202.ecommerce.dto.response;
 
 import lombok.Data;
 
