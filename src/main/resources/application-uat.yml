@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://db:3306/testdata?useSSL=true&serverTimezone=Asia/Bangkok
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://db:3306/ecommerce?useSSL=true&serverTimezone=Asia/Bangkok
+    username: root
+    password: rootpassword
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:

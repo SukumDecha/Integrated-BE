@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/testdata
+    url: jdbc:mysql://localhost:3306/ecommerce?useSSL=true&serverTimezone=Asia/Bangkok
     username: root
     password: seafood.09
     driver-class-name: com.mysql.cj.jdbc.Driver
