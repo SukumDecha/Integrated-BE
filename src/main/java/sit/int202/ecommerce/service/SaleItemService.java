@@ -1,6 +1,5 @@
 package sit.int202.ecommerce.service;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 import org.modelmapper.ModelMapper;
@@ -25,10 +24,12 @@ public class SaleItemService {
     }
 
     public List<SaleItemGalleryResponse> getAllSaleItems() {
-        return repo.findAllByOrderByCreatedOnAsc().stream()
+        return repo.findAllByOrderByCreatedOnAscIdAsc().stream()
                 .map(item -> mapper.map(item, SaleItemGalleryResponse.class))
                 .collect(Collectors.toList());
     }
+
+
 
     @Transactional
     public SaleItemResponse getSaleItemById(Integer id) {
