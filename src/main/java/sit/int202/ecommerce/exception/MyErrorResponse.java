@@ -21,5 +21,4 @@ public class MyErrorResponse {
         this.message = message;
         this.path = path;
     }
-
 }
