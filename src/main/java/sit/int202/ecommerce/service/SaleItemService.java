@@ -1,8 +1,12 @@
 package sit.int202.ecommerce.service;
 
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.dto.SaleItemGalleryResponse;
+import sit.int202.ecommerce.dto.SaleItemResponse;
 import sit.int202.ecommerce.exception.SaleItemNotFoundException;
 import sit.int202.ecommerce.model.SaleItem;
 import sit.int202.ecommerce.repository.SaleItemRepository;
@@ -26,12 +30,13 @@ public class SaleItemService {
                 .collect(Collectors.toList());
     }
 
-    public SaleItem getSaleItemById(Integer id) {
+    @Transactional
+    public SaleItemResponse getSaleItemById(Integer id) {
         SaleItem item = repo.findById(id).orElseThrow(
                 () -> new SaleItemNotFoundException("SaleItem not found for this id :: " + id)
         );
 
-        return item;
+        return mapper.map(item, SaleItemResponse.class);
     }
 }
 
