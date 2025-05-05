@@ -8,6 +8,7 @@ public class SaleItemGalleryResponse {
     private String model;
     private String brandName;
     private Integer price;
+    private Integer ramGb;
     private Integer storageGb;
     private String color;
 }

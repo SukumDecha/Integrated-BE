@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,21 +15,23 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "saleitem")
+@Table(name = "saleItem")
 public class SaleItem {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "brandId", nullable = false)
+    private Brand brand;
 
     @Size(max = 60)
     @NotNull
     @Column(name = "model", nullable = false, length = 60)
     private String model;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brand_id", nullable = false)
-    private Brand brand;
 
     @NotNull
     @Lob
@@ -56,12 +60,12 @@ public class SaleItem {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @NotNull
-    @Column(name = "createdOn", nullable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "createdOn")
     private Instant createdOn;
 
-    @NotNull
-    @Column(name = "updatedOn", nullable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "updatedOn")
     private Instant updatedOn;
 
 }
