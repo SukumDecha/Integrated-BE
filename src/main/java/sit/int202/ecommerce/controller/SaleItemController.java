@@ -17,7 +17,7 @@ import sit.int202.ecommerce.dto.SaleItemResponse;
 import sit.int202.ecommerce.service.SaleItemService;
 
 @RestController
-@RequestMapping("/v1/sale-items")
+@RequestMapping("/itb-mshop/v1/sale-items")
 public class SaleItemController {
 
     private final SaleItemService saleItemService;
