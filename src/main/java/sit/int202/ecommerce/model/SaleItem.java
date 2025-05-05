@@ -26,7 +26,7 @@ public class SaleItem {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brand_id", nullable = false)
+    @JoinColumn(name = "brandId", nullable = false)
     private Brand brand;
 
     @NotNull
@@ -41,7 +41,7 @@ public class SaleItem {
     @Column(name = "ramGb")
     private Integer ramGb;
 
-    @Column(name = "screenSizeInch", precision = 3, scale = 1)
+    @Column(name = "screenSizeInch", precision = 3, scale = 2)
     private BigDecimal screenSizeInch;
 
     @Column(name = "storageGb")
