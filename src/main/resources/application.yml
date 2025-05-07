@@ -6,7 +6,7 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
 springdoc:
   swagger-ui:
-    path: /swagger-ui.html
+    path: /v1/api-docs
   api-docs:
     path: /v3/api-docs
 server:

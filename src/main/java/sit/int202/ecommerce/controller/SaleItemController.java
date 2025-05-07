@@ -7,12 +7,12 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import sit.int202.ecommerce.dto.request.SaleItemCreateRequest;
+import sit.int202.ecommerce.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.dto.response.SaleItemGalleryResponse;
 import sit.int202.ecommerce.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.service.SaleItemService;
@@ -20,7 +20,7 @@ import sit.int202.ecommerce.service.SaleItemService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/itb-mshop/v1/sale-items")
+@RequestMapping("/v1/sale-items")
 public class SaleItemController {
 
     @Autowired
@@ -65,5 +65,50 @@ public class SaleItemController {
         return ResponseEntity.ok(saleItems);
     }
 
+    @PostMapping()
+    @Operation(
+            summary = "Create a new sale item",
+            description = "Creates a new sale item and returns its details."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Sale item created successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = SaleItemDetailResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid input data",
+                    content = @Content
+            )
+    })
+    public ResponseEntity<SaleItemDetailResponse> createSaleItem(@RequestBody @Valid SaleItemCreateRequest request) {
+        var saleItem = saleItemService.createSaleItem(request);
+        return ResponseEntity.status(201).body(saleItem);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(
+            summary = "Update an existing sale item",
+            description = "Updates an existing sale item and returns its updated details."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Sale item updated successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = SaleItemDetailResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Sale item with given ID not found",
+                    content = @Content
+            )
+    })
+    public ResponseEntity<SaleItemDetailResponse> updateSaleItem(
+            @Parameter(description = "ID of the sale item to be updated", required = true) @PathVariable Integer id,
+            @RequestBody @Valid SaleItemUpdateRequest request) {
+        var saleItem = saleItemService.updateSaleItem(id, request);
+        return ResponseEntity.ok(saleItem);
+    }
 
 }

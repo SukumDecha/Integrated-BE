@@ -45,7 +45,7 @@ public class SaleItem {
     @Column(name = "ramGb")
     private Integer ramGb;
 
-    @Column(name = "screenSizeInch", precision = 3, scale = 2)
+    @Column(name = "screenSizeInch", precision = 4, scale = 2)
     private BigDecimal screenSizeInch;
 
     @Column(name = "storageGb")
