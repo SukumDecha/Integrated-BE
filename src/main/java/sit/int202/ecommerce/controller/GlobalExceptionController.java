@@ -29,14 +29,14 @@ public class GlobalExceptionController {
                 .path(request.getRequestURI())
                 .build();
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return ResponseEntity.status(error.getStatus()).body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<MyErrorResponse> handleValidationExceptions(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
         MyErrorResponse error = MyErrorResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .errorMessage("Validation errors")
                 .path(request.getRequestURI())
                 .build();
@@ -52,12 +52,12 @@ public class GlobalExceptionController {
     public ResponseEntity<MyErrorResponse> handleControllerValidation(
             HandlerMethodValidationException ex, HttpServletRequest request) {
         MyErrorResponse error = MyErrorResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .errorMessage(ex.getAllErrors().get(0).getDefaultMessage())
                 .path(request.getRequestURI())
                 .build();
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity.status(error.getStatus()).body(error);
     }
 
     @ExceptionHandler(JpaSystemException.class)
@@ -71,7 +71,7 @@ public class GlobalExceptionController {
 
         error.addValidationError("error", ex.getCause().getMessage());
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        return ResponseEntity.status(error.getStatus()).body(error);
     }
 
 }
