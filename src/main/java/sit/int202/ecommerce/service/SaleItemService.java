@@ -77,5 +77,12 @@ public class SaleItemService {
         return mapper.map(saleItemRepository.save(existingSaleItem), SaleItemDetailResponse.class);
     }
 
+    public void deleteSaleItemById(Integer id) {
+        if (!saleItemRepository.existsById(id)) {
+            throw new SaleItemNotFoundException("Sale item with ID " + id + " not found");
+        }
+        saleItemRepository.deleteById(id);
+    }
+
 }
 
