@@ -111,4 +111,16 @@ public class SaleItemController {
         return ResponseEntity.ok(saleItem);
     }
 
+
+    @DeleteMapping ("/{id}")
+    @Operation(summary = "Delete sale item by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Sale item deleted"),
+            @ApiResponse(responseCode = "404", description = "Sale item does not exist")
+    })
+    public ResponseEntity<Void> deleteSaleItem(@PathVariable Integer id) {
+        saleItemService.deleteSaleItemById(id);
+        return ResponseEntity.noContent().build(); // status 204
+    }
+
 }
