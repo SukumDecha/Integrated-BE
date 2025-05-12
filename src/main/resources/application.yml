@@ -1,0 +1,16 @@
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  jackson:
+    time-zone: Asia/Bangkok
+    date-format: yyyy-MM-dd HH:mm:ss
+springdoc:
+  swagger-ui:
+    path: /v1/api-docs
+  api-docs:
+    path: /v3/api-docs
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
