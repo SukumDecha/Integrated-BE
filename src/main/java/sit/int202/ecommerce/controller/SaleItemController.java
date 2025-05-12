@@ -26,6 +26,23 @@ public class SaleItemController {
     @Autowired
     private SaleItemService saleItemService;
 
+    @GetMapping
+    @Operation(
+            summary = "Get all sale items",
+            description = "Returns a list of sale items (maximum 60 entries). Returns an empty array if no items exist."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "List of sale items (can be empty)",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = SaleItemGalleryResponse.class))
+            )
+    })
+    public ResponseEntity<List<SaleItemGalleryResponse>> getAllSaleItems() {
+        var saleItems = saleItemService.getAllSaleItems();
+        return ResponseEntity.ok(saleItems);
+    }
+
     @GetMapping ("/{id}")
     @Operation(
             summary = "Get sale item by ID",
@@ -46,23 +63,6 @@ public class SaleItemController {
     public ResponseEntity<SaleItemDetailResponse> getSaleItemDetail(@Parameter(description = "ID of the sale item to be retrieved", required = true) @PathVariable Integer id) {
         var saleItem = saleItemService.getSaleItemById(id);
         return ResponseEntity.ok(saleItem);
-    }
-
-    @GetMapping
-    @Operation(
-            summary = "Get all sale items",
-            description = "Returns a list of sale items (maximum 60 entries). Returns an empty array if no items exist."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "List of sale items (can be empty)",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = SaleItemGalleryResponse.class))
-            )
-    })
-    public ResponseEntity<List<SaleItemGalleryResponse>> getAllSaleItems() {
-        var saleItems = saleItemService.getAllSaleItems();
-        return ResponseEntity.ok(saleItems);
     }
 
     @PostMapping()

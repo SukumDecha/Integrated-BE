@@ -1,6 +1,8 @@
 package sit.int202.ecommerce.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -19,12 +21,23 @@ public class GlobalExceptionController {
 
     @ExceptionHandler({
             SaleItemNotFoundException.class,
-            BrandNotFoundException.class
+            BrandNotFoundException.class,
     })
     public ResponseEntity<MyErrorResponse> handleItemNotFound(
             RuntimeException ex, HttpServletRequest request) {
         MyErrorResponse error = MyErrorResponse.builder()
                 .status(HttpStatus.NOT_FOUND.value())
+                .errorMessage(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(error.getStatus()).body(error);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<MyErrorResponse> handlePresentExceptions(ValidationException ex, HttpServletRequest request) {
+        MyErrorResponse error = MyErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
                 .errorMessage(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();

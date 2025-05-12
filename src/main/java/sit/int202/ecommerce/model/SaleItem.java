@@ -60,12 +60,19 @@ public class SaleItem {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "createdOn")
+    @Column(name = "createdOn",
+            insertable = false,
+            updatable = false
+    )
+//    @CreatedDate
     private Instant createdOn;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "updatedOn")
+
+    @Column(name = "updatedOn",
+            insertable = false,
+            updatable = false
+    )
+//    @LastModifiedDate
     private Instant updatedOn;
 
 }

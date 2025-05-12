@@ -1,5 +1,6 @@
 package sit.int202.ecommerce.service;
 
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,8 @@ public class SaleItemService {
     private final BrandService brandService;
     private final ModelMapper mapper;
 
+    private final EntityManager em;
+
     public List<SaleItemGalleryResponse> getAllSaleItems() {
         return saleItemRepository.findAllByOrderByCreatedOnAscIdAsc().stream()
                 .map(item -> mapper.map(item, SaleItemGalleryResponse.class))
@@ -41,6 +44,7 @@ public class SaleItemService {
     }
 
 
+    @Transactional
     public SaleItemDetailResponse createSaleItem(SaleItemCreateRequest item) {
         item.normalize();
 
@@ -51,14 +55,17 @@ public class SaleItemService {
         reqSaleItem.setBrand(brand);
 
         SaleItem newSaleItem = saleItemRepository.save(reqSaleItem);
+
+        em.refresh(newSaleItem);
         return mapper.map(newSaleItem, SaleItemDetailResponse.class);
     }
 
+    @Transactional
     public SaleItemDetailResponse updateSaleItem(Integer id, SaleItemUpdateRequest item) {
         item.normalize();
 
         SaleItem existingSaleItem = saleItemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("SaleItem not found with id: " + id));
+                .orElseThrow(() -> new SaleItemNotFoundException("SaleItem not found with id :: " + id));
 
         // Don't touch the existing brand - important!
         Brand brand = brandService.findById(item.getBrand().getId());
@@ -74,7 +81,10 @@ public class SaleItemService {
         existingSaleItem.setColor(item.getColor());
         existingSaleItem.setQuantity(item.getQuantity());
 
-        return mapper.map(saleItemRepository.save(existingSaleItem), SaleItemDetailResponse.class);
+        SaleItem updatedSaleItem = saleItemRepository.save(existingSaleItem);
+//        em.refresh(updatedSaleItem);
+
+        return mapper.map(updatedSaleItem, SaleItemDetailResponse.class);
     }
 
     public void deleteSaleItemById(Integer id) {

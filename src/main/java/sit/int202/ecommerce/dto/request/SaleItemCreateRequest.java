@@ -31,22 +31,31 @@ public class SaleItemCreateRequest {
 
     private String color;
 
-    @Min(value = 1, message = "Quantity must be at least 1 after adjustment")
     private Integer quantity;
 
-    @NotNull(message = "Description cannot be null")
-    @NotBlank(message = "Description cannot be blank")
     private String description;
 
     public void normalize() {
         if (model != null) {
             model = model.trim();
+
+            if (model.isBlank()) {
+                model = null;
+            }
         }
         if (description != null) {
             description = description.trim();
+
+            if (description.isBlank()) {
+                description = null;
+            }
         }
         if (color != null) {
             color = color.trim();
+
+            if (color.isBlank()) {
+                color = null;
+            }
         }
         if (quantity == null || quantity < 1) {
             quantity = 1;
