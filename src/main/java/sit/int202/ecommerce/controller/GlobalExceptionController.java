@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import sit.int202.ecommerce.dto.response.MyErrorResponse;
+import sit.int202.ecommerce.exception.BrandExistedException;
 import sit.int202.ecommerce.exception.BrandNotFoundException;
 import sit.int202.ecommerce.exception.SaleItemNotFoundException;
 
@@ -22,6 +23,7 @@ public class GlobalExceptionController {
     @ExceptionHandler({
             SaleItemNotFoundException.class,
             BrandNotFoundException.class,
+            BrandExistedException.class
     })
     public ResponseEntity<MyErrorResponse> handleItemNotFound(
             RuntimeException ex, HttpServletRequest request) {
@@ -78,11 +80,9 @@ public class GlobalExceptionController {
             JpaSystemException ex, HttpServletRequest request) {
         MyErrorResponse error = MyErrorResponse.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .errorMessage("Database error occurred")
+                .errorMessage(ex.getCause().getMessage())
                 .path(request.getRequestURI())
                 .build();
-
-        error.addValidationError("error", ex.getCause().getMessage());
 
         return ResponseEntity.status(error.getStatus()).body(error);
     }
