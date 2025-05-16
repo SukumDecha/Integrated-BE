@@ -10,6 +10,7 @@ import sit.int202.ecommerce.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.dto.response.SaleItemGalleryResponse;
 import sit.int202.ecommerce.dto.response.SaleItemDetailResponse;
+import sit.int202.ecommerce.dto.response.SaleItemListResponse;
 import sit.int202.ecommerce.exception.SaleItemNotFoundException;
 import sit.int202.ecommerce.model.Brand;
 import sit.int202.ecommerce.model.SaleItem;
@@ -34,6 +35,12 @@ public class SaleItemService {
                 .collect(Collectors.toList());
     }
 
+    public List<SaleItemListResponse> getAllSaleItemList() {
+        return saleItemRepository.findAllByOrderByCreatedOnAscIdAsc().stream()
+                .map(item -> mapper.map(item, SaleItemListResponse.class))
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public SaleItemDetailResponse getSaleItemById(Integer id) {
         SaleItem item = saleItemRepository.findById(id).orElseThrow(
@@ -49,7 +56,6 @@ public class SaleItemService {
         item.normalize();
 
         Brand brand = brandService.findById(item.getBrand().getId());
-
 
         SaleItem reqSaleItem = mapper.map(item, SaleItem.class);
         reqSaleItem.setBrand(brand);
@@ -93,6 +99,8 @@ public class SaleItemService {
         }
         saleItemRepository.deleteById(id);
     }
+
+
 
 }
 

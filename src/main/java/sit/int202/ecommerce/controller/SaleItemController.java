@@ -15,6 +15,7 @@ import sit.int202.ecommerce.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.dto.response.SaleItemGalleryResponse;
 import sit.int202.ecommerce.dto.response.SaleItemDetailResponse;
+import sit.int202.ecommerce.dto.response.SaleItemListResponse;
 import sit.int202.ecommerce.service.SaleItemService;
 
 import java.util.List;
@@ -122,5 +123,21 @@ public class SaleItemController {
         saleItemService.deleteSaleItemById(id);
         return ResponseEntity.noContent().build(); // status 204
     }
+
+    @GetMapping("/list")
+    @Operation(
+            summary = "Get all sale items",
+            description = "Returns a list of all sale items sorted by creation date"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved list"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<List<SaleItemListResponse>> getSaleItemList() {
+        List<SaleItemListResponse> items = saleItemService.getAllSaleItemList();
+        return ResponseEntity.ok(items);
+    }
+
+
 
 }
