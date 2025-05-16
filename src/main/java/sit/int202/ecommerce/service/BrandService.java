@@ -3,13 +3,17 @@ package sit.int202.ecommerce.service;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import sit.int202.ecommerce.dto.request.BrandCreateRequest;
+import sit.int202.ecommerce.dto.request.BrandRequest;
 import sit.int202.ecommerce.dto.request.BrandUpdateRequest;
+import sit.int202.ecommerce.dto.response.BrandCreateResponse;
 import sit.int202.ecommerce.dto.response.BrandResponse;
 import sit.int202.ecommerce.dto.response.BrandUpdateResponse;
 import sit.int202.ecommerce.exception.BrandNotFoundException;
 import sit.int202.ecommerce.model.Brand;
 import sit.int202.ecommerce.repository.BrandRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,6 +42,25 @@ public class BrandService {
         return brandRepository.findByName(name).orElseThrow(
                 () -> new BrandNotFoundException("Brand not found for this name :: " + name)
         );
+    }
+
+    public BrandCreateResponse createBrand(BrandCreateRequest request) {
+        request.normalize();
+
+        if (brandRepository.findByName(request.getName()).isPresent()) {
+            throw new IllegalArgumentException("Duplicate name");
+        }
+
+        Brand brand = new Brand();
+        brand.setName(request.getName());
+        brand.setWebsiteUrl(request.getWebsiteUrl());
+        brand.setCountryOfOrigin(request.getCountryOfOrigin());
+        brand.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
+
+        Brand savedBrand = brandRepository.save(brand);
+
+        return mapper.map(savedBrand, BrandCreateResponse.class);
+
     }
 
     public BrandUpdateResponse updateBrand(Integer id, BrandUpdateRequest payload) {
