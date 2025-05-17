@@ -103,5 +103,15 @@ public class BrandController {
         return brandService.updateBrand(id, payload);
     }
 
-
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete brand by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Brand deleted"),
+            @ApiResponse(responseCode = "400", description = "Invalid or missing ID"),
+            @ApiResponse(responseCode = "404", description = "Brand does not exist")
+    })
+    public ResponseEntity<Void> deleteBrand(@PathVariable(required = true) Integer id) {
+        brandService.deleteBrandById(id);
+        return ResponseEntity.noContent().build();
+    }
 }
