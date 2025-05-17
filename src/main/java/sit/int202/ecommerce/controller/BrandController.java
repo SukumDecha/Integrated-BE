@@ -5,7 +5,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sit.int202.ecommerce.dto.request.BrandUpdateRequest;
 import sit.int202.ecommerce.dto.response.BrandResponse;
@@ -73,4 +75,18 @@ public class BrandController {
     public BrandUpdateResponse updateBrand(@PathVariable Integer id, @RequestBody BrandUpdateRequest payload) {
         return brandService.updateBrand(id, payload);
     }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete brand by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Brand deleted"),
+            @ApiResponse(responseCode = "400", description = "Invalid or missing ID"),
+            @ApiResponse(responseCode = "404", description = "Brand does not exist")
+    })
+    public ResponseEntity<Void> deleteBrand(@PathVariable(required = true) Integer id) {
+        brandService.deleteBrandById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
 }

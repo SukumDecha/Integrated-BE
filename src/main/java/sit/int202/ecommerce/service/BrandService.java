@@ -7,6 +7,7 @@ import sit.int202.ecommerce.dto.request.BrandUpdateRequest;
 import sit.int202.ecommerce.dto.response.BrandResponse;
 import sit.int202.ecommerce.dto.response.BrandUpdateResponse;
 import sit.int202.ecommerce.exception.BrandNotFoundException;
+import sit.int202.ecommerce.exception.SaleItemNotFoundException;
 import sit.int202.ecommerce.model.Brand;
 import sit.int202.ecommerce.repository.BrandRepository;
 
@@ -64,5 +65,12 @@ public class BrandService {
         }
 
         return mapper.map(brandRepository.save(existingBrand), BrandUpdateResponse.class);
+    }
+
+    public void deleteBrandById(Integer id) {
+        if (!brandRepository.existsById(id)) {
+            throw new BrandNotFoundException("Brand with ID " + id + " not found");
+        }
+        brandRepository.deleteById(id);
     }
 }
