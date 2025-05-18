@@ -1,15 +1,15 @@
 package sit.int202.ecommerce.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -17,6 +17,7 @@ import java.time.Instant;
 @Table(name = "brand")
 public class Brand {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -37,12 +38,15 @@ public class Brand {
     @Column(name = "countryOfOrigin", length = 80)
     private String countryOfOrigin;
 
-    @NotNull
-    @Column(name = "createdOn", nullable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "createdOn")
     private Instant createdOn;
 
-    @NotNull
-    @Column(name = "updatedOn", nullable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "updatedOn")
     private Instant updatedOn;
+
+    @OneToMany(mappedBy = "brand")
+    private Set<SaleItem> saleItems = new LinkedHashSet<>();
 
 }

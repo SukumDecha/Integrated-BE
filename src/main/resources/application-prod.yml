@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:mysql://db:3306/ecommerce?useSSL=true&serverTimezone=Asia/Bangkok
+    username: root
+    password: rootpass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: false
+
+app:
+  cors:
+    allowed-origins: http://ip24ssa1.sit.kmutt.ac.th

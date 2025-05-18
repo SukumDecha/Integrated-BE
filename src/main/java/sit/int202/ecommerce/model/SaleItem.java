@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,11 +15,18 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "saleitem")
+@Table(name = "saleItem")
 public class SaleItem {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "brandId", nullable = false)
+    private Brand brand;
 
     @Size(max = 60)
     @NotNull
@@ -25,13 +34,8 @@ public class SaleItem {
     private String model;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brand_id", nullable = false)
-    private Brand brand;
-
-    @NotNull
     @Lob
-    @Column(name = "description", nullable = false)
+    @Column(name = "description", nullable = false,  columnDefinition = "TEXT")
     private String description;
 
     @NotNull
@@ -41,7 +45,7 @@ public class SaleItem {
     @Column(name = "ramGb")
     private Integer ramGb;
 
-    @Column(name = "screenSizeInch", precision = 3, scale = 1)
+    @Column(name = "screenSizeInch", precision = 4, scale = 2)
     private BigDecimal screenSizeInch;
 
     @Column(name = "storageGb")
@@ -56,12 +60,17 @@ public class SaleItem {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @NotNull
-    @Column(name = "createdOn", nullable = false)
+    @Column(name = "createdOn",
+            insertable = false,
+            updatable = false
+    )
     private Instant createdOn;
 
-    @NotNull
-    @Column(name = "updatedOn", nullable = false)
+
+    @Column(name = "updatedOn",
+            insertable = false,
+            updatable = false
+    )
     private Instant updatedOn;
 
 }

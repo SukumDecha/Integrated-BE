@@ -6,5 +6,6 @@ import sit.int202.ecommerce.model.SaleItem;
 import java.util.List;
 
 public interface SaleItemRepository extends JpaRepository<SaleItem, Integer> {
-    List<SaleItem> findAllByOrderByCreatedOnAsc();
+    List<SaleItem> findAllByOrderByCreatedOnAscIdAsc();
+
 }
