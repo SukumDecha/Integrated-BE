@@ -1,6 +1,7 @@
 package sit.int202.ecommerce.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 import lombok.RequiredArgsConstructor;
@@ -8,10 +9,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.dto.request.SaleItemUpdateRequest;
+import sit.int202.ecommerce.dto.response.BrandResponse;
 import sit.int202.ecommerce.dto.response.SaleItemGalleryResponse;
 import sit.int202.ecommerce.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.dto.response.SaleItemListResponse;
-import sit.int202.ecommerce.exception.SaleItemNotFoundException;
 import sit.int202.ecommerce.model.Brand;
 import sit.int202.ecommerce.model.SaleItem;
 import sit.int202.ecommerce.repository.SaleItemRepository;
@@ -44,7 +45,7 @@ public class SaleItemService {
     @Transactional
     public SaleItemDetailResponse getSaleItemById(Integer id) {
         SaleItem item = saleItemRepository.findById(id).orElseThrow(
-                () -> new SaleItemNotFoundException("SaleItem not found for this id :: " + id)
+                () -> new EntityNotFoundException("SaleItem not found for this id :: " + id)
         );
 
         return mapper.map(item, SaleItemDetailResponse.class);
@@ -55,7 +56,8 @@ public class SaleItemService {
     public SaleItemDetailResponse createSaleItem(SaleItemCreateRequest item) {
         item.normalize();
 
-        Brand brand = brandService.findById(item.getBrand().getId());
+        BrandResponse brandDTO = brandService.getBrandById(item.getBrand().getId());
+        Brand brand = mapper.map(brandDTO, Brand.class);
 
         SaleItem reqSaleItem = mapper.map(item, SaleItem.class);
         reqSaleItem.setBrand(brand);
@@ -71,10 +73,11 @@ public class SaleItemService {
         item.normalize();
 
         SaleItem existingSaleItem = saleItemRepository.findById(id)
-                .orElseThrow(() -> new SaleItemNotFoundException("SaleItem not found with id :: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("SaleItem not found with id :: " + id));
 
         // Don't touch the existing brand - important!
-        Brand brand = brandService.findById(item.getBrand().getId());
+        BrandResponse brandDTO = brandService.getBrandById(item.getBrand().getId());
+        Brand brand = mapper.map(brandDTO, Brand.class);
 
         // Update fields
         existingSaleItem.setModel(item.getModel());
@@ -95,7 +98,7 @@ public class SaleItemService {
 
     public void deleteSaleItemById(Integer id) {
         if (!saleItemRepository.existsById(id)) {
-            throw new SaleItemNotFoundException("Sale item with ID " + id + " not found");
+            throw new EntityNotFoundException("Sale item with ID " + id + " not found");
         }
         saleItemRepository.deleteById(id);
     }

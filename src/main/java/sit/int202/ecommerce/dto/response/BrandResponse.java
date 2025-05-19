@@ -7,5 +7,4 @@ public class BrandResponse {
 
     private Integer id;
     private String name;
-
 }

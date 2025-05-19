@@ -1,20 +1,18 @@
 package sit.int202.ecommerce.service;
 
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.dto.request.BrandCreateRequest;
-import sit.int202.ecommerce.dto.request.BrandRequest;
 import sit.int202.ecommerce.dto.request.BrandUpdateRequest;
-import sit.int202.ecommerce.dto.response.BrandCreateResponse;
+import sit.int202.ecommerce.dto.response.BrandDetailResponse;
 import sit.int202.ecommerce.dto.response.BrandResponse;
-import sit.int202.ecommerce.dto.response.BrandUpdateResponse;
-import sit.int202.ecommerce.exception.BrandNotFoundException;
-import sit.int202.ecommerce.exception.SaleItemNotFoundException;
+import sit.int202.ecommerce.exception.BrandHasSaleItemsException;
 import sit.int202.ecommerce.model.Brand;
 import sit.int202.ecommerce.repository.BrandRepository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,23 +31,19 @@ public class BrandService {
                 .collect(Collectors.toList());
     }
 
-    public Brand findById(Integer id) {
-        return brandRepository.findById(id).orElseThrow(
-                () -> new BrandNotFoundException("Brand not found for this id :: " + id)
+    public BrandDetailResponse getBrandById(Integer id) {
+        Brand brand = brandRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Brand not found for this id :: " + id)
         );
+
+        return mapper.map(brand, BrandDetailResponse.class);
     }
 
-    public Brand findByName(String name) {
-        return brandRepository.findByName(name).orElseThrow(
-                () -> new BrandNotFoundException("Brand not found for this name :: " + name)
-        );
-    }
-
-    public BrandCreateResponse createBrand(BrandCreateRequest request) {
+    public BrandDetailResponse createBrand(BrandCreateRequest request) {
         request.normalize();
 
         if (brandRepository.findByName(request.getName()).isPresent()) {
-            throw new IllegalArgumentException("Duplicate name");
+            throw new EntityExistsException("Brand with name " + request.getName() + " already exists.");
         }
 
         Brand brand = new Brand();
@@ -60,40 +54,39 @@ public class BrandService {
 
         Brand savedBrand = brandRepository.save(brand);
 
-        return mapper.map(savedBrand, BrandCreateResponse.class);
+        return mapper.map(savedBrand, BrandDetailResponse.class);
 
     }
 
-    public BrandUpdateResponse updateBrand(Integer id, BrandUpdateRequest payload) {
-        Brand existingBrand = findById(id);
+    public BrandDetailResponse updateBrand(Integer id, BrandUpdateRequest payload) {
+        payload.normalize();
+
+        Brand existingBrand = brandRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Brand not found for this id :: " + id));
 
         if (payload.getName() != null && !payload.getName().isEmpty()) {
             Brand brandWithSameName = brandRepository.findByName(payload.getName()).orElse(null);
             if (brandWithSameName != null && !brandWithSameName.getId().equals(existingBrand.getId())) {
-                throw new BrandNotFoundException("Brand with name " + payload.getName() + " already exists.");
+                throw new EntityExistsException("Brand with name " + payload.getName() + " already exists.");
             }
         }
 
-        if (payload.getName() != null) {
-            existingBrand.setName(payload.getName());
-        }
-        if (payload.getWebsiteUrl() != null) {
-            existingBrand.setWebsiteUrl(payload.getWebsiteUrl());
-        }
-        if (payload.getCountryOfOrigin() != null) {
-            existingBrand.setCountryOfOrigin(payload.getCountryOfOrigin());
-        }
-        if (payload.getIsActive() != null) {
-            existingBrand.setIsActive(payload.getIsActive());
-        }
+        existingBrand.setName(payload.getName());
+        existingBrand.setWebsiteUrl(payload.getWebsiteUrl());
+        existingBrand.setCountryOfOrigin(payload.getCountryOfOrigin());
+        existingBrand.setIsActive(payload.getIsActive() != null ? payload.getIsActive() : existingBrand.getIsActive());
 
-        return mapper.map(brandRepository.save(existingBrand), BrandUpdateResponse.class);
+        return mapper.map(brandRepository.save(existingBrand), BrandDetailResponse.class);
     }
 
     public void deleteBrandById(Integer id) {
-        if (!brandRepository.existsById(id)) {
-            throw new BrandNotFoundException("Brand with ID " + id + " not found");
+        Brand brand = brandRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Brand not found for this id :: " + id));
+
+        if (brand.getSaleItems() != null && !brand.getSaleItems().isEmpty()) {
+            throw new BrandHasSaleItemsException("Cannot delete brand with existing sale items.");
         }
+
         brandRepository.deleteById(id);
     }
 }
