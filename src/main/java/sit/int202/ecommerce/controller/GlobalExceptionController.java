@@ -1,34 +1,45 @@
 package sit.int202.ecommerce.controller;
 
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import sit.int202.ecommerce.dto.response.MyErrorResponse;
-import sit.int202.ecommerce.exception.BrandExistedException;
-import sit.int202.ecommerce.exception.BrandNotFoundException;
-import sit.int202.ecommerce.exception.SaleItemNotFoundException;
+import sit.int202.ecommerce.exception.BrandHasSaleItemsException;
 
 
 @RestControllerAdvice
-
 public class GlobalExceptionController {
 
-    @ExceptionHandler({
-            SaleItemNotFoundException.class,
-            BrandNotFoundException.class,
-            BrandExistedException.class
-    })
-    public ResponseEntity<MyErrorResponse> handleItemNotFound(
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<MyErrorResponse> entityExceptions(
             RuntimeException ex, HttpServletRequest request) {
+        HttpStatus status;
+
         MyErrorResponse error = MyErrorResponse.builder()
                 .status(HttpStatus.NOT_FOUND.value())
+                .errorMessage(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(error.getStatus()).body(error);
+    }
+
+    @ExceptionHandler({
+            EntityExistsException.class,
+            BrandHasSaleItemsException.class
+    })
+    public ResponseEntity<MyErrorResponse> entityExistsExceptions(
+            RuntimeException ex, HttpServletRequest request) {
+        MyErrorResponse error = MyErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
                 .errorMessage(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
@@ -74,17 +85,4 @@ public class GlobalExceptionController {
 
         return ResponseEntity.status(error.getStatus()).body(error);
     }
-
-    @ExceptionHandler(JpaSystemException.class)
-    public ResponseEntity<MyErrorResponse> handleJpaSystemException(
-            JpaSystemException ex, HttpServletRequest request) {
-        MyErrorResponse error = MyErrorResponse.builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .errorMessage(ex.getCause().getMessage())
-                .path(request.getRequestURI())
-                .build();
-
-        return ResponseEntity.status(error.getStatus()).body(error);
-    }
-
 }

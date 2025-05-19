@@ -21,21 +21,24 @@ public class Brand {
     @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Size(max = 30)
+//    @Size(max = 30)
     @NotNull
-    @Column(name = "name", nullable = false, length = 30)
+//    @Column(name = "name", nullable = false, length = 30)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Size(max = 40)
-    @Column(name = "websiteUrl", length = 40)
+//    @Size(max = 40)
+//    @Column(name = "websiteUrl", length = 40)
+    @Column(name = "websiteUrl")
     private String websiteUrl;
 
     @NotNull
     @Column(name = "isActive", nullable = false)
     private Boolean isActive = false;
 
-    @Size(max = 80)
-    @Column(name = "countryOfOrigin", length = 80)
+//    @Size(max = 80)
+//    @Column(name = "countryOfOrigin", length = 80)
+    @Column(name = "countryOfOrigin")
     private String countryOfOrigin;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
