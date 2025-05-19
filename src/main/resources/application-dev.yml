@@ -11,3 +11,7 @@ spring:
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     show-sql: true
+
+app:
+  cors:
+    allowed-origin: http://localhost:5173

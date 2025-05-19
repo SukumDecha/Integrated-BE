@@ -64,7 +64,6 @@ public class SaleItem {
             insertable = false,
             updatable = false
     )
-//    @CreatedDate
     private Instant createdOn;
 
 
@@ -72,7 +71,6 @@ public class SaleItem {
             insertable = false,
             updatable = false
     )
-//    @LastModifiedDate
     private Instant updatedOn;
 
 }

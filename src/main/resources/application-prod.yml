@@ -11,3 +11,7 @@ spring:
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     show-sql: false
+
+app:
+  cors:
+    allowed-origin: http://ip24ssa1.sit.kmutt.ac.th,http://intproj24.sit.kmutt.ac.th
