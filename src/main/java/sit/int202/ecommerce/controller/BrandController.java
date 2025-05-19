@@ -11,9 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sit.int202.ecommerce.dto.request.BrandCreateRequest;
 import sit.int202.ecommerce.dto.request.BrandUpdateRequest;
-import sit.int202.ecommerce.dto.response.BrandCreateResponse;
+import sit.int202.ecommerce.dto.response.BrandDetailResponse;
 import sit.int202.ecommerce.dto.response.BrandResponse;
-import sit.int202.ecommerce.dto.response.BrandUpdateResponse;
 import sit.int202.ecommerce.dto.response.MyErrorResponse;
 import sit.int202.ecommerce.service.BrandService;
 
@@ -43,32 +42,52 @@ public class BrandController {
                     content = @Content
             )
     })
-    public List<BrandResponse> getAllBrands() {
-        return brandService.getAllBrands();
+    public ResponseEntity<List<BrandResponse>> getAllBrands() {
+        List<BrandResponse> brands = brandService.getAllBrands();
+        return ResponseEntity.ok(brands);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Get brand by ID",
+            description = "Retrieves a brand by its ID."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Brand retrieved successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BrandDetailResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Brand with given ID not found",
+                    content = @Content(schema = @Schema(implementation = MyErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = MyErrorResponse.class))
+            )
+    })
+    public ResponseEntity<BrandResponse> getBrandById(@PathVariable Integer id) {
+        BrandResponse brand = brandService.getBrandById(id);
+        return ResponseEntity.ok(brand);
     }
 
 
+    @PostMapping
     @Operation(summary = "Create a new brand")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Brand created successfully",
-                    content = @Content(schema = @Schema(implementation = BrandResponse.class))),
+                    content = @Content(schema = @Schema(implementation = BrandDetailResponse.class))),
             @ApiResponse(responseCode = "400", description = "Duplicate name",
                     content = @Content(schema = @Schema(implementation = MyErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error",
                     content = @Content(schema = @Schema(implementation = MyErrorResponse.class))),
     })
-    @PostMapping
-    public ResponseEntity<?> createBrand(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Brand creation request",
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = BrandCreateRequest.class))
-            )
-            @Valid @RequestBody BrandCreateRequest request
-    ) {
-
-            BrandCreateResponse response = brandService.createBrand(request);
-            return ResponseEntity.status(201).body(response);
+    public ResponseEntity<BrandDetailResponse> createBrand(@Valid @RequestBody BrandCreateRequest request) {
+        BrandDetailResponse response = brandService.createBrand(request);
+        return ResponseEntity.status(201).body(response);
     }
 
 
@@ -81,26 +100,27 @@ public class BrandController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Brand updated successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BrandUpdateResponse.class))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = BrandDetailResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
                     description = "Brand with given ID not found",
-                    content = @Content
+                    content = @Content(schema = @Schema(implementation = MyErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Duplicate brand name or invalid data",
-                    content = @Content
+                    content = @Content(schema = @Schema(implementation = MyErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "500",
                     description = "Internal server error",
-                    content = @Content
+                    content = @Content(schema = @Schema(implementation = MyErrorResponse.class))
             )
     })
-    public BrandUpdateResponse updateBrand(@PathVariable Integer id, @RequestBody BrandUpdateRequest payload) {
-        return brandService.updateBrand(id, payload);
+    public ResponseEntity<BrandDetailResponse> updateBrand(@PathVariable Integer id, @RequestBody BrandUpdateRequest payload) {
+        BrandDetailResponse updatedBrand = brandService.updateBrand(id, payload);
+        return ResponseEntity.ok(updatedBrand);
     }
 
     @DeleteMapping("/{id}")
