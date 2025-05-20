@@ -11,7 +11,7 @@ public class BrandCreateRequest {
 
     @NotNull(message = "Brand ID must not be null")
     @NotBlank(message = "Brand name must not be blank")
-    @Length(min = 1, max = 30, message = "Brand name must be between 1 and 100 characters")
+//    @Length(min = 1, max = 30, message = "Brand name must be between 1 and 100 characters")
     private String name;
 
 //    @Length(max = 40, message = "Website URL is too long")
