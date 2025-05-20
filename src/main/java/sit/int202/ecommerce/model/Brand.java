@@ -41,12 +41,16 @@ public class Brand {
     @Column(name = "countryOfOrigin")
     private String countryOfOrigin;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "createdOn")
+    @Column(name = "createdOn",
+            insertable = false,
+            updatable = false
+    )
     private Instant createdOn;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "updatedOn")
+    @Column(name = "updatedOn",
+            insertable = false,
+            updatable = false
+    )
     private Instant updatedOn;
 
     @OneToMany(mappedBy = "brand")

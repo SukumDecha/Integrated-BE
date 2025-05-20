@@ -18,6 +18,7 @@ public class BrandCreateRequest {
 //    @URL(message = "Website URL must be a valid URL")
     private String websiteUrl;
 
+    //    @Length(min = 1, max = 50, message = "Brand country of origin must be between 1 and 50 characters")
     private String countryOfOrigin;
 
     private Boolean isActive;
