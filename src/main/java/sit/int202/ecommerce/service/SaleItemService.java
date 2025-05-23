@@ -6,13 +6,14 @@ import jakarta.transaction.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.dto.request.SaleItemUpdateRequest;
-import sit.int202.ecommerce.dto.response.BrandResponse;
-import sit.int202.ecommerce.dto.response.SaleItemGalleryResponse;
-import sit.int202.ecommerce.dto.response.SaleItemDetailResponse;
-import sit.int202.ecommerce.dto.response.SaleItemListResponse;
+import sit.int202.ecommerce.dto.response.*;
 import sit.int202.ecommerce.model.Brand;
 import sit.int202.ecommerce.model.SaleItem;
 import sit.int202.ecommerce.repository.SaleItemRepository;
@@ -102,6 +103,51 @@ public class SaleItemService {
         }
         saleItemRepository.deleteById(id);
     }
+
+    public SaleItemPaginateResponse<SaleItemDetailResponse> getSaleItems(
+            int page,
+            int size,
+            String sortField,
+            String sortDirection,
+            List<String> filterBrands
+    ) {
+        Pageable pageable = createPageable(page, size, sortField, sortDirection);
+        Page<SaleItem> saleItems = findSaleItemsByBrands(filterBrands, pageable);
+        return toPaginateResponse(saleItems);
+    }
+
+    private Pageable createPageable(int page, int size, String sortField, String sortDirection) {
+        if (sortField == null || sortField.isBlank()) {
+            return PageRequest.of(page, size, Sort.by("id"));
+        }
+        Sort.Direction direction = Sort.Direction.fromString(sortDirection);
+        return PageRequest.of(page, size, Sort.by(direction, sortField));
+    }
+
+    private Page<SaleItem> findSaleItemsByBrands(List<String> filterBrands, Pageable pageable) {
+        if (filterBrands != null && !filterBrands.isEmpty()) {
+            return saleItemRepository.findByBrand_NameIn(filterBrands, pageable);
+        }
+        return saleItemRepository.findAll(pageable);
+    }
+
+    private SaleItemPaginateResponse<SaleItemDetailResponse> toPaginateResponse(Page<SaleItem> saleItems) {
+        Page<SaleItemDetailResponse> dtoPage = saleItems.map(item -> mapper.map(item, SaleItemDetailResponse.class));
+
+        SaleItemPaginateResponse<SaleItemDetailResponse> response = new SaleItemPaginateResponse<>();
+        response.setContent(dtoPage.getContent());
+        response.setFirst(dtoPage.isFirst());
+        response.setLast(dtoPage.isLast());
+        response.setPage(dtoPage.getNumber());
+        response.setSize(dtoPage.getSize());
+        response.setTotalPages(dtoPage.getTotalPages());
+        response.setTotalElements(dtoPage.getTotalElements());
+        response.setSort(dtoPage.getSort().toString());
+
+        return response;
+    }
+
+
 
 
 
