@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class SaleItemPaginateResponse<T> {
+public class PaginateResponse<T> {
 
         private List<T> content;
         private boolean last;

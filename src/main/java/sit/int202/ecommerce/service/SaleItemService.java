@@ -17,6 +17,9 @@ import sit.int202.ecommerce.dto.response.*;
 import sit.int202.ecommerce.model.Brand;
 import sit.int202.ecommerce.model.SaleItem;
 import sit.int202.ecommerce.repository.SaleItemRepository;
+import sit.int202.ecommerce.util.PaginationUtil;
+import sit.int202.ecommerce.dto.response.PaginateResponse;
+
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -104,52 +107,33 @@ public class SaleItemService {
         saleItemRepository.deleteById(id);
     }
 
-    public SaleItemPaginateResponse<SaleItemDetailResponse> getSaleItems(
+    public PaginateResponse<SaleItemDetailResponse> getSaleItems(
             int page,
             int size,
             String sortField,
             String sortDirection,
             List<String> filterBrands
     ) {
-        Pageable pageable = createPageable(page, size, sortField, sortDirection);
-        Page<SaleItem> saleItems = findSaleItemsByBrands(filterBrands, pageable);
-        return toPaginateResponse(saleItems);
-    }
-
-    private Pageable createPageable(int page, int size, String sortField, String sortDirection) {
-        if (sortField == null || sortField.isBlank()) {
-            return PageRequest.of(page, size, Sort.by("id"));
+        Sort sort = Sort.by("id");
+        if (sortField != null && !sortField.isBlank()) {
+            sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
         }
-        Sort.Direction direction = Sort.Direction.fromString(sortDirection);
-        return PageRequest.of(page, size, Sort.by(direction, sortField));
-    }
 
-    private Page<SaleItem> findSaleItemsByBrands(List<String> filterBrands, Pageable pageable) {
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<SaleItem> saleItems;
         if (filterBrands != null && !filterBrands.isEmpty()) {
-            return saleItemRepository.findByBrand_NameIn(filterBrands, pageable);
+            saleItems = saleItemRepository.findByBrand_NameIn(filterBrands, pageable);
+        } else {
+            saleItems = saleItemRepository.findAll(pageable);
         }
-        return saleItemRepository.findAll(pageable);
+
+        Page<SaleItemDetailResponse> dtoPage = saleItems.map(item ->
+                mapper.map(item, SaleItemDetailResponse.class)
+        );
+
+        return PaginationUtil.toPaginateResponse(dtoPage);
     }
-
-    private SaleItemPaginateResponse<SaleItemDetailResponse> toPaginateResponse(Page<SaleItem> saleItems) {
-        Page<SaleItemDetailResponse> dtoPage = saleItems.map(item -> mapper.map(item, SaleItemDetailResponse.class));
-
-        SaleItemPaginateResponse<SaleItemDetailResponse> response = new SaleItemPaginateResponse<>();
-        response.setContent(dtoPage.getContent());
-        response.setFirst(dtoPage.isFirst());
-        response.setLast(dtoPage.isLast());
-        response.setPage(dtoPage.getNumber());
-        response.setSize(dtoPage.getSize());
-        response.setTotalPages(dtoPage.getTotalPages());
-        response.setTotalElements(dtoPage.getTotalElements());
-        response.setSort(dtoPage.getSort().toString());
-
-        return response;
-    }
-
-
-
-
 
 }
 
