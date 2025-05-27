@@ -6,16 +6,20 @@ import jakarta.transaction.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.dto.request.SaleItemUpdateRequest;
-import sit.int202.ecommerce.dto.response.BrandResponse;
-import sit.int202.ecommerce.dto.response.SaleItemGalleryResponse;
-import sit.int202.ecommerce.dto.response.SaleItemDetailResponse;
-import sit.int202.ecommerce.dto.response.SaleItemListResponse;
+import sit.int202.ecommerce.dto.response.*;
 import sit.int202.ecommerce.model.Brand;
 import sit.int202.ecommerce.model.SaleItem;
 import sit.int202.ecommerce.repository.SaleItemRepository;
+import sit.int202.ecommerce.util.PaginationUtil;
+import sit.int202.ecommerce.dto.response.PaginateResponse;
+
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -103,7 +107,33 @@ public class SaleItemService {
         saleItemRepository.deleteById(id);
     }
 
+    public PaginateResponse<SaleItemDetailResponse> getSaleItems(
+            int page,
+            int size,
+            String sortField,
+            String sortDirection,
+            List<String> filterBrands
+    ) {
+        Sort sort = Sort.by("id");
+        if (sortField != null && !sortField.isBlank()) {
+            sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
+        }
 
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<SaleItem> saleItems;
+        if (filterBrands != null && !filterBrands.isEmpty()) {
+            saleItems = saleItemRepository.findByBrand_NameIn(filterBrands, pageable);
+        } else {
+            saleItems = saleItemRepository.findAll(pageable);
+        }
+
+        Page<SaleItemDetailResponse> dtoPage = saleItems.map(item ->
+                mapper.map(item, SaleItemDetailResponse.class)
+        );
+
+        return PaginationUtil.toPaginateResponse(dtoPage);
+    }
 
 }
 

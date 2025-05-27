@@ -13,12 +13,13 @@ SELECT @@global.time_zone, @@session.time_zone, NOW();
 CREATE TABLE IF NOT EXISTS brand (
                                      id INT AUTO_INCREMENT PRIMARY KEY,
                                      name VARCHAR(30) NOT NULL UNIQUE CHECK (TRIM(name) <> ''),
-    websiteUrl VARCHAR(40) CHECK (websiteUrl IS NULL OR TRIM(websiteUrl) <> ''),
+    websiteUrl VARCHAR(40) CHECK (websiteUrl IS NULL OR LENGTH(TRIM(websiteUrl)) > 0),
     isActive BOOLEAN NOT NULL,
-    countryOfOrigin VARCHAR(80) CHECK (countryOfOrigin IS NULL OR TRIM(countryOfOrigin) <> ''),
+    countryOfOrigin VARCHAR(80) CHECK (countryOfOrigin IS NULL OR LENGTH(TRIM(countryOfOrigin)) > 0),
     createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
+
 
 
 
@@ -42,6 +43,58 @@ BEGIN
 END;
 //
 DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER trg_brand_trim_country_before_insert
+    BEFORE INSERT ON brand
+    FOR EACH ROW
+BEGIN
+    SET NEW.countryOfOrigin = TRIM(NEW.countryOfOrigin);
+    IF NEW.countryOfOrigin = '' THEN
+        SET NEW.countryOfOrigin = NULL;
+END IF;
+END;
+//
+
+CREATE TRIGGER trg_brand_trim_country_before_update
+    BEFORE UPDATE ON brand
+    FOR EACH ROW
+BEGIN
+    SET NEW.countryOfOrigin = TRIM(NEW.countryOfOrigin);
+    IF NEW.countryOfOrigin = '' THEN
+        SET NEW.countryOfOrigin = NULL;
+END IF;
+END;
+//
+DELIMITER ;
+
+-- Trigger: Trim websiteUrl ก่อน INSERT
+DELIMITER //
+
+CREATE TRIGGER trg_brand_trim_websiteUrl_before_insert
+    BEFORE INSERT ON brand
+    FOR EACH ROW
+BEGIN
+    SET NEW.websiteUrl = TRIM(NEW.websiteUrl);
+    IF NEW.websiteUrl = '' THEN
+        SET NEW.websiteUrl = NULL;
+END IF;
+END;
+//
+
+CREATE TRIGGER trg_brand_trim_websiteUrl_before_update
+    BEFORE UPDATE ON brand
+    FOR EACH ROW
+BEGIN
+    SET NEW.websiteUrl = TRIM(NEW.websiteUrl);
+    IF NEW.websiteUrl = '' THEN
+        SET NEW.websiteUrl = NULL;
+END IF;
+END;
+//
+
+DELIMITER ;
+
 
 -- สร้างตาราง saleItem
 CREATE TABLE IF NOT EXISTS saleItem (
