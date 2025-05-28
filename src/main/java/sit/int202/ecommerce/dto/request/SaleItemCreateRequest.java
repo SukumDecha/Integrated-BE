@@ -57,9 +57,9 @@ public class SaleItemCreateRequest {
                 color = null;
             }
         }
-        if (quantity == null || quantity < 1) {
-            quantity = 1;
-        }
+//        if (quantity == null || quantity < 1) {
+//            quantity = 1;
+//        }
     }
 }
 

@@ -21,6 +21,7 @@ import sit.int202.ecommerce.util.PaginationUtil;
 import sit.int202.ecommerce.dto.response.PaginateResponse;
 
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -114,12 +115,18 @@ public class SaleItemService {
             String sortDirection,
             List<String> filterBrands
     ) {
-        Sort sort = Sort.by("id");
+        List<Sort.Order> sorts = new ArrayList<>();
         if (sortField != null && !sortField.isBlank()) {
-            sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
+            Sort.Order order = new Sort.Order(Sort.Direction.fromString(sortDirection), sortField);
+
+            sorts.add(order);
         }
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        sorts.add(Sort.Order.asc("createdOn"));
+        sorts.add(Sort.Order.asc("id"));
+
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
 
         Page<SaleItem> saleItems;
         if (filterBrands != null && !filterBrands.isEmpty()) {
