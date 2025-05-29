@@ -14,4 +14,5 @@ spring:
 
 app:
   cors:
+    enabled: true
     allowed-origin: http://localhost:5173
