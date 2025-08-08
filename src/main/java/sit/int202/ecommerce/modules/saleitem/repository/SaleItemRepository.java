@@ -8,7 +8,6 @@ import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 import java.util.List;
 
 public interface SaleItemRepository extends JpaRepository<SaleItem, Integer> {
-    List<SaleItem> findAllByOrderByCreatedOnAscIdAsc();
     Page<SaleItem> findByBrand_NameIn(List<String> brandNames, Pageable pageable);
 
 

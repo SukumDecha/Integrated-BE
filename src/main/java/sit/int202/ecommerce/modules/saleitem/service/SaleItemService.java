@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import sit.int202.ecommerce.common.utils.SortUtils;
 import sit.int202.ecommerce.modules.brand.dto.response.BrandResponse;
 import sit.int202.ecommerce.modules.brand.service.BrandService;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
@@ -22,7 +23,7 @@ import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
-import sit.int202.ecommerce.common.utils.PaginationUtil;
+import sit.int202.ecommerce.common.utils.PaginationUtils;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 
 
@@ -42,14 +43,16 @@ public class SaleItemService {
 
     private final EntityManager em;
 
-    public List<SaleItemGalleryResponse> getAllSaleItems() {
-        return saleItemRepository.findAllByOrderByCreatedOnAscIdAsc().stream()
-                .map(saleItemMapper::toDetailResponse)
-                .collect(Collectors.toList());
+    public List<SaleItemGalleryResponse> getAllSaleItems(String sortBy, String sortDirection) {
+        return saleItemRepository.findAll(SortUtils.buildSort(sortBy, sortDirection))
+                .stream()
+                .map(saleItemMapper::toGalleryResponse)
+                .toList();
     }
 
-    public List<SaleItemListResponse> getAllSaleItemList() {
-        return saleItemRepository.findAllByOrderByCreatedOnAscIdAsc().stream()
+    public List<SaleItemListResponse> getAllSaleItemList(String sortBy, String sortDirection) {
+        return saleItemRepository.findAll(SortUtils.buildSort(sortBy, sortDirection))
+                .stream()
                 .map(saleItemMapper::toListResponse)
                 .collect(Collectors.toList());
     }
@@ -62,7 +65,6 @@ public class SaleItemService {
 
         return saleItemMapper.toDetailResponse(item);
     }
-
 
     @Transactional
     public SaleItemDetailResponse createSaleItem(SaleItemCreateRequest item) {
@@ -141,7 +143,7 @@ public class SaleItemService {
 
         Page<SaleItemDetailResponse> dtoPage = saleItems.map(saleItemMapper::toDetailResponse);
 
-        return PaginationUtil.toPaginateResponse(dtoPage);
+        return PaginationUtils.toPaginateResponse(dtoPage);
     }
 
 }

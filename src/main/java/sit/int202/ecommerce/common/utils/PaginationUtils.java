@@ -3,7 +3,7 @@ package sit.int202.ecommerce.common.utils;
 import org.springframework.data.domain.Page;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 
-public class PaginationUtil {
+public class PaginationUtils {
 
     public static <T> PaginateResponse<T> toPaginateResponse(Page<T> page) {
         PaginateResponse<T> response = new PaginateResponse<>();

@@ -12,5 +12,4 @@ public interface BrandRepository extends JpaRepository<Brand, Integer> {
     @Query("SELECT b FROM Brand b WHERE b.name = ?1")
     Optional<Brand> findByName(String name);
 
-    List<Brand> findAllByOrderByNameAsc();
 }

@@ -40,7 +40,7 @@ public class SaleItemController {
             )
     })
     public ResponseEntity<List<SaleItemGalleryResponse>> getAllSaleItems() {
-        var saleItems = saleItemService.getAllSaleItems();
+        var saleItems = saleItemService.getAllSaleItems(null, null);
         return ResponseEntity.ok(saleItems);
     }
 
@@ -134,7 +134,7 @@ public class SaleItemController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<List<SaleItemListResponse>> getSaleItemList() {
-        List<SaleItemListResponse> items = saleItemService.getAllSaleItemList();
+        List<SaleItemListResponse> items = saleItemService.getAllSaleItemList(null, null);
         return ResponseEntity.ok(items);
     }
 
