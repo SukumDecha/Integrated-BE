@@ -1,0 +1,14 @@
+package sit.int202.ecommerce.modules.saleitem.repository;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
+
+import java.util.List;
+
+public interface SaleItemRepository extends JpaRepository<SaleItem, Integer> {
+    Page<SaleItem> findByBrand_NameIn(List<String> brandNames, Pageable pageable);
+
+
+}
