@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
@@ -248,6 +249,52 @@ public class SaleItemService {
         sorts.add(Sort.Order.asc("id"));
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
+
+        boolean hasBrand = filterBrands != null && !filterBrands.isEmpty();
+        boolean hasStorage = filterStorages != null && !filterStorages.isEmpty();
+        boolean hasLowerOnly = filterPriceLower != null && filterPriceUpper == null;
+        boolean hasRange = filterPriceLower != null && filterPriceUpper != null;
+
+        // ถ้ามีเงื่อนไขใด ๆ ให้ใช้ Specification แล้ว return ทันที (ไม่ไปเข้าบล็อกเดิมข้างล่าง)
+        if (hasBrand || hasStorage || hasLowerOnly || hasRange) {
+            Specification<SaleItem> spec = Specification.where(null);
+
+            if (hasBrand) {
+                spec = spec.and((root, q, cb) -> root.get("brand").get("name").in(filterBrands));
+            }
+
+            if (hasStorage) {
+                boolean includeNull = filterStorages.contains(-1);
+                List<Integer> normalStorages = filterStorages.stream()
+                        .filter(v -> v != null && v != -1)
+                        .toList();
+
+                Specification<SaleItem> storageSpec = null;
+                if (!normalStorages.isEmpty()) {
+                    storageSpec = (root, q, cb) -> root.get("storageGb").in(normalStorages);
+                }
+                if (includeNull) {
+                    Specification<SaleItem> nullSpec = (root, q, cb) -> cb.isNull(root.get("storageGb"));
+                    storageSpec = (storageSpec == null) ? nullSpec : storageSpec.or(nullSpec);
+                }
+                if (storageSpec != null) {
+                    spec = spec.and(storageSpec);
+                }
+            }
+
+            // ราคา: lower เท่านั้น = exact, lower+upper = between [lower, upper]
+            if (hasLowerOnly) {
+                spec = spec.and((root, q, cb) -> cb.equal(root.get("price"), filterPriceLower));
+            } else if (hasRange) {
+                spec = spec.and((root, q, cb) -> cb.between(root.get("price"), filterPriceLower, filterPriceUpper));
+            }
+            // (upper อย่างเดียว -> ไม่ใช้ราคา)
+
+            Page<SaleItem> specResult = saleItemRepository.findAll(spec, pageable);
+            Page<SaleItemDetailResponse> dtoPageSpec = specResult.map(saleItemMapper::toDetailResponse);
+            return PaginationUtils.toPaginateResponse(dtoPageSpec);
+        }
+
 
         Page<SaleItem> saleItems;
         if (filterBrands != null && !filterBrands.isEmpty()) {
