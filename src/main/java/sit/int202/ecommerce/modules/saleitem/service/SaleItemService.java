@@ -4,7 +4,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
@@ -224,7 +227,10 @@ public class SaleItemService {
             int size,
             String sortField,
             String sortDirection,
-            List<String> filterBrands
+            List<String> filterBrands,
+            List<Integer> filterStorages,
+            Integer filterPriceLower,
+            Integer filterPriceUpper
     ) {
         List<Sort.Order> sorts = new ArrayList<>();
         if (sortField != null && !sortField.isBlank()) {
@@ -235,9 +241,13 @@ public class SaleItemService {
         sorts.add(Sort.Order.asc("id"));
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
-        Page<SaleItem> saleItems = (filterBrands != null && !filterBrands.isEmpty())
-                ? saleItemRepository.findByBrand_NameIn(filterBrands, pageable)
-                : saleItemRepository.findAll(pageable);
+
+        Page<SaleItem> saleItems;
+        if (filterBrands != null && !filterBrands.isEmpty()) {
+            saleItems = saleItemRepository.findByBrand_NameIn(filterBrands, pageable);
+        } else {
+            saleItems = saleItemRepository.findAll(pageable);
+        }
 
         Page<SaleItemDetailResponse> dtoPage = saleItems.map(saleItemMapper::toDetailResponse);
         return PaginationUtils.toPaginateResponse(dtoPage);
