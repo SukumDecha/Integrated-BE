@@ -306,4 +306,31 @@ public class SaleItemService {
         Page<SaleItemDetailResponse> dtoPage = saleItems.map(saleItemMapper::toDetailResponse);
         return PaginationUtils.toPaginateResponse(dtoPage);
     }
+
+    public List<Integer> getDistinctStorageSizes(Boolean includeNotSpecified) {
+        // ✅ แยกตาม includeNotSpecified
+        List<Integer> rawSizes = Boolean.TRUE.equals(includeNotSpecified)
+                ? saleItemRepository.findDistinctStorageGbIncludingNull()
+                : saleItemRepository.findDistinctStorageGb();
+
+        // ✅ แปลง null เป็น -1 เพื่อให้ frontend แสดง 'Not specified'
+        List<Integer> storageSizes = rawSizes.stream()
+                .map(s -> s == null ? -1 : s)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // ✅ ใส่ 32 GB เข้าไปถ้าหาย (ตาม business rule)
+        if (!storageSizes.contains(32)) {
+            storageSizes.add(32);
+        }
+
+        // ✅ เรียง: ค่าจริงมาก่อน แล้วค่อย -1 (Not specified)
+        Collections.sort(storageSizes, (a, b) -> {
+            if (a == -1) return 1;
+            if (b == -1) return -1;
+            return Integer.compare(a, b);
+        });
+
+        return storageSizes;
+    }
 }
