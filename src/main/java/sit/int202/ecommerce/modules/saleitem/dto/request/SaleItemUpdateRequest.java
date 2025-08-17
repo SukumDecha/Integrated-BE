@@ -5,6 +5,7 @@ import lombok.Data;
 import sit.int202.ecommerce.modules.brand.dto.request.BrandRequest;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class SaleItemUpdateRequest {
@@ -32,6 +33,8 @@ public class SaleItemUpdateRequest {
     private Integer quantity;
 
     private String description;
+
+    private List<SaleItemImageRequest> imageInfos;
 
     public void normalize() {
         if (model != null) {

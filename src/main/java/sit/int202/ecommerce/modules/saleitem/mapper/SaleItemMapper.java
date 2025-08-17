@@ -1,7 +1,12 @@
 package sit.int202.ecommerce.modules.saleitem.mapper;
 
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
+import sit.int202.ecommerce.modules.brand.mapper.BrandMapper;
+import sit.int202.ecommerce.modules.file.mapper.FileMapper;
+import sit.int202.ecommerce.modules.file.model.File;
+import sit.int202.ecommerce.modules.file.service.FileService;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
@@ -9,17 +14,36 @@ import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryRespons
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
 import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 
+import java.util.Comparator;
+import java.util.List;
+
 @Component
+@RequiredArgsConstructor
 public class SaleItemMapper {
 
     private final ModelMapper modelMapper;
-
-    public SaleItemMapper(ModelMapper modelMapper) {
-        this.modelMapper = modelMapper;
-    }
+    private final BrandMapper brandMapper;
+    private final FileMapper fileMapper;
+    private final FileService fileService; // ✅ เพิ่ม service สำหรับดึงไฟล์
 
     public SaleItemDetailResponse toDetailResponse(SaleItem saleItem) {
-        return modelMapper.map(saleItem, SaleItemDetailResponse.class);
+        SaleItemDetailResponse dto = modelMapper.map(saleItem, SaleItemDetailResponse.class);
+
+        if (saleItem.getBrand() != null) {
+            dto.setBrandName(saleItem.getBrand().getName());
+        }
+
+        List<File> files = fileService.getFilesByRef("SALE_ITEM", saleItem.getId());
+        if (!files.isEmpty()) {
+            dto.setSaleItemImages(
+                    files.stream()
+                            .sorted(Comparator.comparing(f -> f.getDisplayOrder() != null ? f.getDisplayOrder() : 0))
+                            .map(fileMapper::toResponse)
+                            .toList()
+            );
+        }
+
+        return dto;
     }
 
     public SaleItemGalleryResponse toGalleryResponse(SaleItem saleItem) {
