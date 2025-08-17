@@ -1,15 +1,19 @@
 package sit.int202.ecommerce.modules.saleitem.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
+import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
+import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
+import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.service.SaleItemService;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -17,10 +21,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SaleItemV2Controller {
     private final SaleItemService saleItemService;
+    private final ObjectMapper objectMapper;
 
     @Operation(summary = "Get all sale items with pagination, brand filter, sorting")
     @GetMapping
-    public   PaginateResponse<SaleItemDetailResponse> getSaleItems(
+    public PaginateResponse<SaleItemDetailResponse> getSaleItems(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String sortField,
@@ -28,5 +33,71 @@ public class SaleItemV2Controller {
             @RequestParam(required = false) List<String> filterBrands
     ) {
         return saleItemService.getSaleItems(page, size, sortField, sortDirection, filterBrands);
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Create sale item with image files (multipart/form-data)")
+    public ResponseEntity<SaleItemDetailResponse> createSaleItemMultipart(
+            @RequestPart("saleItem") String saleItemJson,
+            @RequestPart(value = "imageInfos", required = false) List<MultipartFile> imageFiles
+    ) {
+        try {
+            // 🔍 LOG JSON ที่ถูกส่งมา
+            System.out.println("[DEBUG] Raw JSON from client: " + saleItemJson);
+
+            SaleItemCreateRequest saleItem = objectMapper.readValue(saleItemJson, SaleItemCreateRequest.class);
+
+            // 🔍 LOG imageInfos หลังแปลง
+            System.out.println("[DEBUG] Parsed imageInfos: " + saleItem.getImageInfos());
+
+            if (saleItem.getImageInfos() != null && imageFiles != null) {
+                for (int i = 0; i < imageFiles.size(); i++) {
+                    if (i < saleItem.getImageInfos().size()) {
+                        saleItem.getImageInfos().get(i).setImageFile(imageFiles.get(i));
+                        System.out.println("[DEBUG] Attached image: " + imageFiles.get(i).getOriginalFilename());
+                    }
+                }
+            }
+
+            var created = saleItemService.createSaleItem(saleItem);
+            return ResponseEntity.status(201).body(created);
+
+        } catch (IOException e) {
+            e.printStackTrace(); // 👈 log error ด้วย
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Update sale item with image files (multipart/form-data)")
+    public ResponseEntity<SaleItemDetailResponse> updateSaleItemMultipart(
+            @PathVariable Integer id,
+            @RequestPart("saleItem") String saleItemJson,
+            @RequestPart(value = "imageInfos", required = false) List<MultipartFile> imageFiles
+    ) {
+        try {
+            SaleItemUpdateRequest saleItem = objectMapper.readValue(saleItemJson, SaleItemUpdateRequest.class);
+
+            if (saleItem.getImageInfos() != null && imageFiles != null) {
+                for (int i = 0; i < imageFiles.size(); i++) {
+                    if (i < saleItem.getImageInfos().size()) {
+                        saleItem.getImageInfos().get(i).setImageFile(imageFiles.get(i));
+                    }
+                }
+            }
+
+            var updated = saleItemService.updateSaleItem(id, saleItem);
+            return ResponseEntity.ok(updated);
+
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete sale item by ID")
+    public ResponseEntity<Void> deleteSaleItem(@PathVariable Integer id) {
+        saleItemService.deleteSaleItemById(id);
+        return ResponseEntity.noContent().build();
     }
 }

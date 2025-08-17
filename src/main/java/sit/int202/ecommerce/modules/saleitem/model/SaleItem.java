@@ -8,10 +8,13 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.Where;
 import sit.int202.ecommerce.modules.brand.model.Brand;
+import sit.int202.ecommerce.modules.file.model.File;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -74,4 +77,8 @@ public class SaleItem {
     )
     private Instant updatedOn;
 
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "refId", referencedColumnName = "id", insertable = false, updatable = false)
+    @Where(clause = "refType = 'SALE_ITEM' AND usageType = 'GALLERY'")
+    private List<File> files;
 }

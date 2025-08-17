@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import sit.int202.ecommerce.common.dto.ErrorResponse;
 import sit.int202.ecommerce.common.exceptions.BrandHasSaleItemsException;
+import sit.int202.ecommerce.common.exceptions.FileUploadException;
 
 
 @RestControllerAdvice
@@ -80,6 +81,18 @@ public class GlobalExceptionHandler {
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .errorMessage(ex.getAllErrors().get(0).getDefaultMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(error.getStatus()).body(error);
+    }
+
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<ErrorResponse> handleFileUploadException(
+            FileUploadException ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .errorMessage(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
 
