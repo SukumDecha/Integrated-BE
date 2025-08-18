@@ -10,9 +10,10 @@ import sit.int202.ecommerce.modules.file.dto.FileResponse;
 @RequiredArgsConstructor
 public class FileMapper {
 
-    private final ModelMapper modelMapper;
+//    private final ModelMapper modelMapper;
 
     public FileResponse toResponse(File file) {
-        return modelMapper.map(file, FileResponse.class);
+//        return modelMapper.map(file, FileResponse.class);
+        return new FileResponse(file);
     }
 }

@@ -8,14 +8,20 @@ import java.time.Instant;
 import java.util.List;
 
 @Data
-public class SaleItemDetailResponse extends SaleItemGalleryResponse {
+public class SaleItemDetailResponse {
+    private Long id;
+    private String model;
+    private String brandName;
     private String description;
+    private BigDecimal price;
+    private Integer ramGb;
     private BigDecimal screenSizeInch;
     private Integer quantity;
-
-    private Instant createdOn;
-    private Instant updatedOn;
+    private Integer storageGb;
+    private String color;
 
     private List<FileResponse> saleItemImages;
+    private Instant createdOn;
+    private Instant updatedOn;
 }
 

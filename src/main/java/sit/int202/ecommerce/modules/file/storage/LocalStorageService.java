@@ -50,11 +50,10 @@ public class LocalStorageService implements FileStorageAdapter {
         return Paths.get(uploadDir, storedFilename).toString();
     }
 
-    // ✅ ใช้สำหรับเก็บไฟล์ใน subdirectory เช่น sale-items/
+    // ใช้สำหรับเก็บไฟล์ใน subdirectory เช่น sale-items/
     @Override
-    public String saveFile(MultipartFile file, String subDirectory) throws IOException {
-        String originalFilename = file.getOriginalFilename();
-        Path destination = Paths.get(uploadDir, subDirectory, originalFilename);
+    public String saveFile(MultipartFile file, String subDirectory, String storedFilename) throws IOException {
+        Path destination = Paths.get(uploadDir, subDirectory, storedFilename);
         Files.createDirectories(destination.getParent());
         file.transferTo(destination.toFile());
         log.info("File stored at: {}", destination.toAbsolutePath());
@@ -65,6 +64,7 @@ public class LocalStorageService implements FileStorageAdapter {
     public boolean deleteFile(String storedFilename, String subDirectory) throws IOException {
         Path filePath = Paths.get(uploadDir, subDirectory, storedFilename);
         try {
+            System.out.println("🧾 Trying to delete file from disk at path: " + filePath.toAbsolutePath());
             return Files.deleteIfExists(filePath);
         } catch (IOException e) {
             log.error("Failed to delete file {}/{}", subDirectory, storedFilename, e);

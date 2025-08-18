@@ -8,7 +8,7 @@ public interface FileStorageAdapter {
     /**
      * Save file to the storage and return the stored filename.
      */
-    String saveFile(MultipartFile file, String subDirectory) throws IOException;
+    String saveFile(MultipartFile file, String subDirectory, String storedFilename) throws IOException;
 
     /**
      * Delete file from the storage by stored filename.
