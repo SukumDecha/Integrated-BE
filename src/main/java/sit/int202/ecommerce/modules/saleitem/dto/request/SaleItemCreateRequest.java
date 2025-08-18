@@ -13,7 +13,7 @@ public class SaleItemCreateRequest {
     @NotNull(message = "Brand cannot be null")
     private BrandRequest brand;
 
-    @NotNull(message = "Category ID cannot be null")
+    @NotNull(message = "Model cannot be null")
     @NotBlank(message = "Model cannot be blank")
     private String model;
 
