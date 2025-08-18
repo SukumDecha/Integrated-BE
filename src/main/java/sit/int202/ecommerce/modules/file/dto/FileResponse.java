@@ -15,7 +15,7 @@ public class FileResponse {
     private Integer imageViewOrder;
 
     public FileResponse(File file) {
-        this.fileName = file.getOriginalFilename();
+        this.fileName = file.getStoredFilename();
         this.imageViewOrder = file.getDisplayOrder();
     }
 }

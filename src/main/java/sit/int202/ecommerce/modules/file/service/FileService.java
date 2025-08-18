@@ -70,7 +70,7 @@ public class FileService {
         String extension = getFileExtension(multipartFile.getOriginalFilename());
         String storedFilename = UUID.randomUUID() + "." + extension;
 
-        storageAdapter.saveFile(multipartFile, refType);
+        storageAdapter.saveFile(multipartFile, refType, storedFilename);
 
         File file = new File();
         file.setRefType(refType);
@@ -90,6 +90,10 @@ public class FileService {
     public boolean deleteFile(Integer fileId) {
         return fileRepository.findById(fileId).map(file -> {
             try {
+                System.out.println("⛔ Attempting to delete file metadata and disk file:");
+                System.out.println(" - fileId: " + fileId);
+                System.out.println(" - storedFilename: " + file.getStoredFilename());
+                System.out.println(" - refType (used as subDirectory): " + file.getRefType());
                 fileRepository.delete(file);
 
                 boolean deletedFromDisk = storageAdapter.deleteFile(file.getStoredFilename(), file.getRefType());
