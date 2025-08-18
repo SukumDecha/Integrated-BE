@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SaleItemService {
@@ -77,6 +79,7 @@ public class SaleItemService {
         tempSaleItem.setBrand(brand);
         SaleItem saleItem = saleItemRepository.save(tempSaleItem);
 
+        log.info("Payload for create: ", item.toString());
         try {
             List<SaleItemImageRequest> imageInfos = item.getImageInfos();
             List<File> uploadedFiles = new ArrayList<>();
@@ -145,6 +148,7 @@ public class SaleItemService {
         Set<String> keepFileNames = new HashSet<>();
         List<File> newFilesToStore = new ArrayList<>();
 
+        log.info("Payload for create: ", item.getImageInfos().toString());
         if (imageInfos != null) {
             if (imageInfos.size() > 4) {
                 throw new FileUploadException("Maximum 4 images are allowed.");

@@ -83,7 +83,7 @@ public class SaleItemController {
                     content = @Content
             )
     })
-    public ResponseEntity<SaleItemDetailResponse> createSaleItem(@RequestBody @Valid SaleItemCreateRequest request) {
+    public ResponseEntity<SaleItemDetailResponse> createSaleItem(@Valid @ModelAttribute SaleItemCreateRequest request) {
         var saleItem = saleItemService.createSaleItem(request);
         return ResponseEntity.status(201).body(saleItem);
     }
@@ -107,7 +107,7 @@ public class SaleItemController {
     })
     public ResponseEntity<SaleItemDetailResponse> updateSaleItem(
             @Parameter(description = "ID of the sale item to be updated", required = true) @PathVariable Integer id,
-            @RequestBody @Valid SaleItemUpdateRequest request) {
+            @ModelAttribute @Valid SaleItemUpdateRequest request) {
         var saleItem = saleItemService.updateSaleItem(id, request);
         return ResponseEntity.ok(saleItem);
     }
