@@ -30,9 +30,15 @@ public class SaleItemV2Controller {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String sortField,
             @RequestParam(defaultValue = "asc") String sortDirection,
-            @RequestParam(required = false) List<String> filterBrands
+            @RequestParam(required = false) List<String> filterBrands,
+            @RequestParam(required = false) List<Integer> filterStorages,
+            @RequestParam(required = false) Integer filterPriceLower,
+            @RequestParam(required = false) Integer filterPriceUpper
     ) {
-        return saleItemService.getSaleItems(page, size, sortField, sortDirection, filterBrands);
+        return saleItemService.getSaleItems(
+                page, size, sortField, sortDirection,
+                filterBrands, filterStorages, filterPriceLower, filterPriceUpper
+        );
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
