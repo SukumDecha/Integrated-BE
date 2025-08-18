@@ -142,7 +142,6 @@ public class FileService {
             File file = new File();
             file.setRefType("SALE_ITEM");
             file.setRefId(saleItemId);
-//            file.setUsageType("GALLERY");
             file.setOriginalFilename(multipartFile.getOriginalFilename());
             file.setStoredFilename(storedFilename);
             file.setMimeType(multipartFile.getContentType());
