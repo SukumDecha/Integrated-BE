@@ -79,22 +79,19 @@ public class SaleItemService {
         tempSaleItem.setBrand(brand);
         SaleItem saleItem = saleItemRepository.save(tempSaleItem);
 
-        log.info("Payload for create: ", item.toString());
         try {
             List<SaleItemImageRequest> imageInfos = item.getImageInfos();
             List<File> uploadedFiles = new ArrayList<>();
 
             if (imageInfos != null) {
-                long newImageCount = imageInfos.stream()
-                        .filter(info -> "NEW".equalsIgnoreCase(info.getStatus()))
-                        .count();
+                long newImageCount = imageInfos.size();
 
                 if (newImageCount > 4) {
                     throw new FileUploadException("You can upload up to 4 images only.");
                 }
 
                 for (SaleItemImageRequest info : imageInfos) {
-                    if ("NEW".equalsIgnoreCase(info.getStatus()) && info.getImageFile() != null) {
+                    if (info.getImageFile() != null) {
                         if (info.getImageFile().getSize() > 2 * 1024 * 1024) {
                             throw new FileUploadException("Each image must be smaller than 2MB.");
                         }
@@ -102,7 +99,8 @@ public class SaleItemService {
                         File file = fileService.saveFile(
                                 info.getImageFile(),
                                 "SALE_ITEM",
-                                saleItem.getId()
+                                saleItem.getId(),
+                                info.getOrder() != null ? info.getOrder() : 0
                         );
 
                         file.setDisplayOrder(info.getOrder() != null ? info.getOrder() : 0);
@@ -131,75 +129,80 @@ public class SaleItemService {
         SaleItem existing = saleItemRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("SaleItem not found with id :: " + id));
 
+        // Update basic fields
         BrandResponse brandDto = brandService.getBrandById(item.getBrand().getId());
         Brand brand = brandMapper.toEntity(brandDto);
+        existing.setBrand(brand);
         existing.setModel(item.getModel());
         existing.setPrice(item.getPrice());
         existing.setDescription(item.getDescription());
-        existing.setBrand(brand);
         existing.setRamGb(item.getRamGb());
         existing.setScreenSizeInch(item.getScreenSizeInch());
         existing.setStorageGb(item.getStorageGb());
         existing.setColor(item.getColor());
         existing.setQuantity(item.getQuantity());
 
-        List<SaleItemImageRequest> imageInfos = item.getImageInfos();
-        List<File> existingFiles = fileService.getFilesByRef("SALE_ITEM", id);
-        Set<String> keepFileNames = new HashSet<>();
-        List<File> newFilesToStore = new ArrayList<>();
+        List<SaleItemImageRequest> imageInfos = Optional.ofNullable(item.getImageInfos())
+                .orElse(new ArrayList<>());
 
-        log.info("Payload for create: ", item.getImageInfos().toString());
-        if (imageInfos != null) {
+        System.out.println("Total Image Info" + item.getImageInfos().size());
+        System.out.println("Image Info: " +  item.getImageInfos());
+
+        List<File> existingFiles = fileService.getFilesByRef("SALE_ITEM", id);
+        List<File> newFilesToStore = new ArrayList<>();
+        Set<String> providedFileNames = new HashSet<>();
+
+        if (imageInfos == null || imageInfos.isEmpty()) {
+            // Remove all images
+            existingFiles.forEach(f -> fileService.deleteFile(f.getId()));
+            existing.setFiles(new ArrayList<>());
+            System.out.println("Removed all files");
+        } else {
             if (imageInfos.size() > 4) {
                 throw new FileUploadException("Maximum 4 images are allowed.");
             }
 
+            // Collect fileNames of existing images to keep
             for (SaleItemImageRequest info : imageInfos) {
-                switch (info.getStatus().toUpperCase()) {
-                    case "OLD":
-                        if (info.getFileName() != null) {
-                            keepFileNames.add(info.getFileName());
-                        }
-                        break;
-                    case "DELETED":
-                        if (info.getFileName() != null) {
-                            existingFiles.stream()
-                                    .filter(f -> f.getOriginalFilename().equals(info.getFileName()))
-                                    .findFirst()
-                                    .ifPresent(f -> fileService.deleteFile(f.getId()));
-                        }
-                        break;
-                    case "NEW":
-                        if (info.getImageFile() != null) {
-                            if (info.getImageFile().getSize() > 2 * 1024 * 1024) {
-                                throw new FileUploadException("Each image must be smaller than 2MB.");
-                            }
-                            try {
-                                File newFile = fileService.storeFile(
-                                        "SALE_ITEM", id, info.getImageFile(), info.getOrder()
-                                );
-                                newFilesToStore.add(newFile);
-                            } catch (IOException e) {
-                                throw new FileUploadException("Failed to store new image: " + e.getMessage());
-                            }
-                        }
-                        break;
+                if (info.getFileName() != null) {
+                    providedFileNames.add(info.getFileName());
                 }
             }
 
-            // อัปเดตลำดับรูปที่ยังคงอยู่
+            // Delete any existing file not in provided list
+            existingFiles.stream()
+                    .filter(f -> !providedFileNames.contains(f.getStoredFilename()))
+                    .forEach(f -> fileService.deleteFile(f.getId()));
+
+            // Process new files
+            for (SaleItemImageRequest info : imageInfos) {
+                if (info.getImageFile() != null) {
+                    if (info.getImageFile().getSize() > 2 * 1024 * 1024) {
+                        throw new FileUploadException("Each image must be smaller than 2MB.");
+                    }
+                    try {
+                        File newFile = fileService.saveFile( info.getImageFile(), "SALE_ITEM", id,info.getOrder());
+                        newFilesToStore.add(newFile);
+                    } catch (IOException e) {
+                        throw new FileUploadException("Failed to store new image: " + e.getMessage());
+                    }
+                }
+            }
+
+            // Update order for existing images
             for (File file : existingFiles) {
-                if (keepFileNames.contains(file.getOriginalFilename())) {
+                if (providedFileNames.contains(file.getStoredFilename())) {
                     imageInfos.stream()
-                            .filter(i -> file.getOriginalFilename().equals(i.getFileName()))
+                            .filter(i -> file.getStoredFilename().equals(i.getFileName()))
                             .findFirst()
                             .ifPresent(i -> file.setDisplayOrder(i.getOrder()));
                 }
             }
 
+            // Merge existing + new files
             List<File> updatedFileList = new ArrayList<>();
             updatedFileList.addAll(existingFiles.stream()
-                    .filter(f -> keepFileNames.contains(f.getOriginalFilename()))
+                    .filter(f -> providedFileNames.contains(f.getStoredFilename()))
                     .toList());
             updatedFileList.addAll(newFilesToStore);
 

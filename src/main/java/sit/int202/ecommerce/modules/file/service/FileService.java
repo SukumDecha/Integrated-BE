@@ -66,7 +66,7 @@ public class FileService {
         return savedFiles;
     }
 
-    public File saveFile(MultipartFile multipartFile, String refType, Integer refId) throws IOException {
+    public File saveFile(MultipartFile multipartFile, String refType, Integer refId, Integer order) throws IOException {
         String extension = getFileExtension(multipartFile.getOriginalFilename());
         String storedFilename = UUID.randomUUID() + "." + extension;
 
@@ -80,7 +80,7 @@ public class FileService {
         file.setMimeType(multipartFile.getContentType());
         file.setFileSize(multipartFile.getSize());
         file.setFilePath(storageAdapter.getFilePath(storedFilename, refType));
-        file.setDisplayOrder(0);
+        file.setDisplayOrder(order != null ? order : 0);
         file.setCreatedOn(Instant.now());
 
         return fileRepository.save(file);
@@ -121,41 +121,6 @@ public class FileService {
             return "";
         }
         return filename.substring(dotIndex + 1).toLowerCase();
-    }
-
-    public void storeFilesForSaleItem(List<SaleItemImageRequest> imageInfos, List<MultipartFile> multipartFiles, Integer saleItemId) throws IOException {
-        System.out.println("[DEBUG] storeFilesForSaleItem CALLED");
-        final int MAX_FILES = 4;
-        final long MAX_FILE_SIZE = 2 * 1024 * 1024;
-
-        if (imageInfos.size() > MAX_FILES || multipartFiles.size() > MAX_FILES) {
-            throw new FileUploadException("Maximum 4 pictures are allowed");
-        }
-        for (int i = 0; i < imageInfos.size(); i++) {
-            SaleItemImageRequest info = imageInfos.get(i);
-            MultipartFile multipartFile = multipartFiles.get(i);
-
-            if (multipartFile.getSize() > MAX_FILE_SIZE) {
-                throw new FileUploadException("File size must not exceed 2MB: " + multipartFile.getOriginalFilename());
-            }
-
-            String extension = getFileExtension(multipartFile.getOriginalFilename());
-            String storedFilename = UUID.randomUUID() + "." + extension;
-            String filePath = storageAdapter.store(multipartFile, storedFilename);
-
-            File file = new File();
-            file.setRefType("SALE_ITEM");
-            file.setRefId(saleItemId);
-            file.setOriginalFilename(multipartFile.getOriginalFilename());
-            file.setStoredFilename(storedFilename);
-            file.setMimeType(multipartFile.getContentType());
-            file.setFileSize(multipartFile.getSize());
-            file.setFilePath(filePath);
-            file.setDisplayOrder(info.getOrder());
-            file.setCreatedOn(java.time.Instant.now());
-
-            fileRepository.save(file);
-        }
     }
 
     public File storeFile(String refType, Integer refId, MultipartFile multipartFile, Integer displayOrder) throws IOException {

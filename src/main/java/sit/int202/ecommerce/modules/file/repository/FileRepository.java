@@ -10,5 +10,8 @@ import java.util.List;
 public interface FileRepository extends JpaRepository<File, Integer> {
 
     List<File> findByRefTypeAndRefIdOrderByDisplayOrderAsc(String refType, Integer refId);
+
+
+
     void deleteByRefTypeAndRefId(String refType, Integer refId);
 }

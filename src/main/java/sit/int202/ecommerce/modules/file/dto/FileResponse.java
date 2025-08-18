@@ -12,10 +12,16 @@ import sit.int202.ecommerce.modules.file.model.File;
 @AllArgsConstructor
 public class FileResponse {
     private String fileName;
+
+    private String imageUrl;
     private Integer imageViewOrder;
 
     public FileResponse(File file) {
         this.fileName = file.getStoredFilename();
         this.imageViewOrder = file.getDisplayOrder();
+        this.imageUrl = "/uploads/" +
+                file.getRefType() +
+                "/" +
+                file.getStoredFilename();
     }
 }
