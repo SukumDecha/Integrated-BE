@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
@@ -249,6 +250,52 @@ public class SaleItemService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
 
+        boolean hasBrand = filterBrands != null && !filterBrands.isEmpty();
+        boolean hasStorage = filterStorages != null && !filterStorages.isEmpty();
+        boolean hasLowerOnly = filterPriceLower != null && filterPriceUpper == null;
+        boolean hasRange = filterPriceLower != null && filterPriceUpper != null;
+
+        // ถ้ามีเงื่อนไขใด ๆ ให้ใช้ Specification แล้ว return ทันที (ไม่ไปเข้าบล็อกเดิมข้างล่าง)
+        if (hasBrand || hasStorage || hasLowerOnly || hasRange) {
+            Specification<SaleItem> spec = Specification.where(null);
+
+            if (hasBrand) {
+                spec = spec.and((root, q, cb) -> root.get("brand").get("name").in(filterBrands));
+            }
+
+            if (hasStorage) {
+                boolean includeNull = filterStorages.contains(-1);
+                List<Integer> normalStorages = filterStorages.stream()
+                        .filter(v -> v != null && v != -1)
+                        .toList();
+
+                Specification<SaleItem> storageSpec = null;
+                if (!normalStorages.isEmpty()) {
+                    storageSpec = (root, q, cb) -> root.get("storageGb").in(normalStorages);
+                }
+                if (includeNull) {
+                    Specification<SaleItem> nullSpec = (root, q, cb) -> cb.isNull(root.get("storageGb"));
+                    storageSpec = (storageSpec == null) ? nullSpec : storageSpec.or(nullSpec);
+                }
+                if (storageSpec != null) {
+                    spec = spec.and(storageSpec);
+                }
+            }
+
+            // ราคา: lower เท่านั้น = exact, lower+upper = between [lower, upper]
+            if (hasLowerOnly) {
+                spec = spec.and((root, q, cb) -> cb.equal(root.get("price"), filterPriceLower));
+            } else if (hasRange) {
+                spec = spec.and((root, q, cb) -> cb.between(root.get("price"), filterPriceLower, filterPriceUpper));
+            }
+            // (upper อย่างเดียว -> ไม่ใช้ราคา)
+
+            Page<SaleItem> specResult = saleItemRepository.findAll(spec, pageable);
+            Page<SaleItemDetailResponse> dtoPageSpec = specResult.map(saleItemMapper::toDetailResponse);
+            return PaginationUtils.toPaginateResponse(dtoPageSpec);
+        }
+
+
         Page<SaleItem> saleItems;
         if (filterBrands != null && !filterBrands.isEmpty()) {
             saleItems = saleItemRepository.findByBrand_NameIn(filterBrands, pageable);
@@ -258,5 +305,32 @@ public class SaleItemService {
 
         Page<SaleItemDetailResponse> dtoPage = saleItems.map(saleItemMapper::toDetailResponse);
         return PaginationUtils.toPaginateResponse(dtoPage);
+    }
+
+    public List<Integer> getDistinctStorageSizes(Boolean includeNotSpecified) {
+        // ✅ แยกตาม includeNotSpecified
+        List<Integer> rawSizes = Boolean.TRUE.equals(includeNotSpecified)
+                ? saleItemRepository.findDistinctStorageGbIncludingNull()
+                : saleItemRepository.findDistinctStorageGb();
+
+        // ✅ แปลง null เป็น -1 เพื่อให้ frontend แสดง 'Not specified'
+        List<Integer> storageSizes = rawSizes.stream()
+                .map(s -> s == null ? -1 : s)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // ✅ ใส่ 32 GB เข้าไปถ้าหาย (ตาม business rule)
+        if (!storageSizes.contains(32)) {
+            storageSizes.add(32);
+        }
+
+        // ✅ เรียง: ค่าจริงมาก่อน แล้วค่อย -1 (Not specified)
+        Collections.sort(storageSizes, (a, b) -> {
+            if (a == -1) return 1;
+            if (b == -1) return -1;
+            return Integer.compare(a, b);
+        });
+
+        return storageSizes;
     }
 }

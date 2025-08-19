@@ -13,8 +13,11 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, Integer>, Jp
     Page<SaleItem> findByBrand_NameIn(List<String> brandNames, Pageable pageable);
     List<SaleItem> findByBrand_NameIn(List<String> brandNames);
 
-    // สำหรับ endpoint ดึงรายการ storage size เฉพาะที่มีอยู่จริง (ไม่รวม null)
-    @Query("select distinct s.storageGb from SaleItem s where s.storageGb is not null order by s.storageGb asc")
+    @Query("select distinct s.storageGb from SaleItem s order by s.storageGb asc")
     List<Integer> findDistinctStorageGb();
+
+    @Query("select distinct s.storageGb from SaleItem s order by s.storageGb asc")
+    List<Integer> findDistinctStorageGbIncludingNull();
+
 
 }

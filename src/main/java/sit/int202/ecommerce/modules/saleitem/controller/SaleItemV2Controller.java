@@ -117,4 +117,12 @@ public class SaleItemV2Controller {
         saleItemService.deleteSaleItemById(id);
         return ResponseEntity.noContent().build(); // 204
     }
+
+    @Operation(summary = "Get distinct storage sizes for filtering (include -1 for 'Not specified')")
+    @GetMapping("/storage-sizes")
+    public List<Integer> getStorageSizes(
+            @RequestParam(defaultValue = "true") boolean includeNotSpecified
+    ) {
+        return saleItemService.getDistinctStorageSizes(includeNotSpecified);
+    }
 }
