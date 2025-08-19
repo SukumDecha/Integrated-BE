@@ -16,3 +16,5 @@ app:
   cors:
     enabled: false
     allowed-origin: http://ip24ssa1.sit.kmutt.ac.th,http://intproj24.sit.kmutt.ac.th
+  file:
+    upload-dir: ${user.dir}/uploads
