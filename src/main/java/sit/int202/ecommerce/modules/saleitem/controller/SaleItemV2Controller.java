@@ -125,4 +125,19 @@ public class SaleItemV2Controller {
     ) {
         return saleItemService.getDistinctStorageSizes(includeNotSpecified);
     }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get sale item by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Sale item found"),
+            @ApiResponse(responseCode = "404", description = "Sale item not found")
+    })
+    public ResponseEntity<SaleItemDetailResponse> getSaleItemById(@PathVariable Integer id) {
+        try {
+            SaleItemDetailResponse item = saleItemService.getSaleItemById(id);
+            return ResponseEntity.ok(item);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sale item not found");
+        }
+    }
 }
