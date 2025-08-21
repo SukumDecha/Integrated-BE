@@ -38,7 +38,6 @@ public class SaleItem {
     private String model;
 
     @NotNull
-    @Lob
     @Column(name = "description", nullable = false,  columnDefinition = "TEXT")
     private String description;
 

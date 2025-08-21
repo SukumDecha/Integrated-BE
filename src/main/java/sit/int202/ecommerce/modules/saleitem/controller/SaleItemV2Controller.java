@@ -37,11 +37,12 @@ public class SaleItemV2Controller {
             @RequestParam(required = false) List<String> filterBrands,
             @RequestParam(required = false) List<Integer> filterStorages,
             @RequestParam(required = false) Integer filterPriceLower,
-            @RequestParam(required = false) Integer filterPriceUpper
+            @RequestParam(required = false) Integer filterPriceUpper,
+            @RequestParam(required = false) String filterSearch
     ) {
         return saleItemService.getSaleItems(
                 page, size, sortField, sortDirection,
-                filterBrands, filterStorages, filterPriceLower, filterPriceUpper
+                filterBrands, filterStorages, filterPriceLower, filterPriceUpper, filterSearch
         );
     }
 
