@@ -19,9 +19,15 @@ public class BrandUpdateRequest {
 
     private Boolean isActive;
 
-    public void normalize() {
-        if (name != null) name = name.trim();
-        if (websiteUrl != null) websiteUrl = websiteUrl.trim();
-        if (countryOfOrigin != null) countryOfOrigin = countryOfOrigin.trim();
+    public void setName(String name) {
+        this.name = name != null ? name.trim() : null;
+    }
+
+    public void setWebsiteUrl(String websiteUrl) {
+        this.websiteUrl = websiteUrl != null ? websiteUrl.trim() : null;
+    }
+
+    public void setCountryOfOrigin(String countryOfOrigin) {
+        this.countryOfOrigin = countryOfOrigin != null ? countryOfOrigin.trim() : null;
     }
 }

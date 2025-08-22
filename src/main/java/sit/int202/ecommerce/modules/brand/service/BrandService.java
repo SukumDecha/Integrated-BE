@@ -40,8 +40,6 @@ public class BrandService {
     }
 
     public BrandDetailResponse createBrand(BrandCreateRequest request) {
-        request.normalize();
-
         if (brandRepository.findByName(request.getName()).isPresent()) {
             throw new EntityExistsException("Brand with name " + request.getName() + " already exists.");
         }
@@ -58,8 +56,6 @@ public class BrandService {
     }
 
     public BrandDetailResponse updateBrand(Integer id, BrandUpdateRequest payload) {
-        payload.normalize();
-
         Brand existingBrand = brandRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Brand not found for this id :: " + id));
 

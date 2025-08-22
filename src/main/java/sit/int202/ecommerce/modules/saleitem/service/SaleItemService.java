@@ -1,6 +1,5 @@
 package sit.int202.ecommerce.modules.saleitem.service;
 
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -25,6 +24,7 @@ import sit.int202.ecommerce.modules.file.repository.FileRepository;
 import sit.int202.ecommerce.modules.file.service.FileService;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemImageRequest;
+import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryResponse;
@@ -72,8 +72,6 @@ public class SaleItemService {
 
     @Transactional
     public SaleItemDetailResponse createSaleItem(SaleItemCreateRequest item) {
-        item.normalize();
-
         BrandResponse brandDTO = brandService.getBrandById(item.getBrand().getId());
         Brand brand = brandMapper.toEntity(brandDTO);
 
@@ -126,8 +124,6 @@ public class SaleItemService {
 
     @Transactional
     public SaleItemDetailResponse updateSaleItem(Integer id, SaleItemUpdateRequest item) {
-        item.normalize();
-
         SaleItem existing = saleItemRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("SaleItem not found with id :: " + id));
 
@@ -146,9 +142,6 @@ public class SaleItemService {
 
         List<SaleItemImageRequest> imageInfos = Optional.ofNullable(item.getImageInfos())
                 .orElse(new ArrayList<>());
-
-        System.out.println("Total Image Info" + item.getImageInfos().size());
-        System.out.println("Image Info: " +  item.getImageInfos());
 
         List<File> existingFiles = fileService.getFilesByRef("SALE_ITEM", id);
         List<File> newFilesToStore = new ArrayList<>();
@@ -231,90 +224,17 @@ public class SaleItemService {
         saleItemRepository.deleteById(id);
     }
 
-    public PaginateResponse<SaleItemDetailResponse> getSaleItems(
-            int page,
-            int size,
-            String sortField,
-            String sortDirection,
-            List<String> filterBrands,
-            List<Integer> filterStorages,
-            Integer filterPriceLower,
-            Integer filterPriceUpper,
-            String filterSearch) {
-        List<Sort.Order> sorts = new ArrayList<>();
-        if (sortField != null && !sortField.isBlank()) {
-            sorts.add(new Sort.Order(Sort.Direction.fromString(sortDirection), sortField));
-        }
-
-        sorts.add(Sort.Order.asc("createdOn"));
-        sorts.add(Sort.Order.asc("id"));
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
-
-        boolean hasBrand = filterBrands != null && !filterBrands.isEmpty();
-        boolean hasStorage = filterStorages != null && !filterStorages.isEmpty();
-        boolean hasLowerOnly = filterPriceLower != null && filterPriceUpper == null;
-        boolean hasRange = filterPriceLower != null && filterPriceUpper != null;
-        boolean hasKeyword = filterSearch != null && !filterSearch.trim().isEmpty();
-
-        Specification<SaleItem> spec = Specification.where(null);
-
-        // ถ้ามีเงื่อนไขใด ๆ ให้ใช้ Specification แล้ว return ทันที (ไม่ไปเข้าบล็อกเดิมข้างล่าง)
-        if (hasBrand || hasStorage || hasLowerOnly || hasRange || hasKeyword) {
-
-            if (hasBrand) {
-                spec = spec.and((root, q, cb) -> root.get("brand").get("name").in(filterBrands));
-            }
-
-            if (hasStorage) {
-                boolean includeNull = filterStorages.contains(-1);
-                List<Integer> normalStorages = filterStorages.stream()
-                        .filter(v -> v != null && v != -1)
-                        .toList();
-
-                Specification<SaleItem> storageSpec = null;
-                if (!normalStorages.isEmpty()) {
-                    storageSpec = (root, q, cb) -> root.get("storageGb").in(normalStorages);
-                }
-                if (includeNull) {
-                    Specification<SaleItem> nullSpec = (root, q, cb) -> cb.isNull(root.get("storageGb"));
-                    storageSpec = (storageSpec == null) ? nullSpec : storageSpec.or(nullSpec);
-                }
-                if (storageSpec != null) {
-                    spec = spec.and(storageSpec);
-                }
-            }
-
-            // ราคา: lower เท่านั้น = exact, lower+upper = between [lower, upper]
-            if (hasLowerOnly) {
-                spec = spec.and((root, q, cb) -> cb.equal(root.get("price"), filterPriceLower));
-            } else if (hasRange) {
-                spec = spec.and((root, q, cb) -> cb.between(root.get("price"), filterPriceLower, filterPriceUpper));
-            }
-            // (upper อย่างเดียว -> ไม่ใช้ราคา)
-
-            //  keyword search in description / model / color
-            if (hasKeyword) {
-                String normalized = filterSearch.trim()
-                        .replaceAll("[^\\p{L}\\p{Nd}\\s]", "")  // ลบอักขระพิเศษ ยกเว้นตัวอักษร/ตัวเลข/ช่องว่าง
-                        .replaceAll("\\s+", " ");               // ลดช่องว่างซ้ำซ้อนให้เหลือ 1 ช่อง
-                String keyword = "%" + normalized.toLowerCase() + "%";
-                spec = spec.and((root, query, cb) -> cb.or(
-                        cb.like(cb.lower(root.get("description")), keyword),
-                        cb.like(cb.lower(root.get("model")), keyword),
-                        cb.like(cb.lower(root.get("color")), keyword)
-                ));
-            }
-
-
-            Page<SaleItem> specResult = saleItemRepository.findAll(spec, pageable);
-            Page<SaleItemDetailResponse> dtoPageSpec = specResult.map(saleItemMapper::toDetailResponse);
-            return PaginationUtils.toPaginateResponse(dtoPageSpec);
-        }
+    @Transactional
+    public PaginateResponse<SaleItemDetailResponse> getSaleItems(SaleItemPaginationRequest request) {
+        Pageable pageable = buildPageable(request);
+        Specification<SaleItem> spec = buildSpecification(request);
 
         Page<SaleItem> saleItems;
-        if (filterBrands != null && !filterBrands.isEmpty()) {
-            saleItems = saleItemRepository.findByBrand_NameIn(filterBrands, pageable);
+
+        if (spec != null) {
+            saleItems = saleItemRepository.findAll(spec, pageable);
+        } else if (request.getFilterBrands() != null && !request.getFilterBrands().isEmpty()) {
+            saleItems = saleItemRepository.findByBrand_NameIn(request.getFilterBrands(), pageable);
         } else {
             saleItems = saleItemRepository.findAll(pageable);
         }
@@ -349,4 +269,65 @@ public class SaleItemService {
 
         return storageSizes;
     }
+
+    private Pageable buildPageable(SaleItemPaginationRequest request) {
+        List<Sort.Order> orders = new ArrayList<>();
+
+        if (request.getSortBy() != null && !request.getSortBy().isBlank()) {
+            orders.add(new Sort.Order(
+                    Sort.Direction.fromString(request.getSortDirection()),
+                    request.getSortBy()
+            ));
+        }
+
+        orders.add(Sort.Order.asc("createdOn"));
+        orders.add(Sort.Order.asc("id"));
+
+        return PageRequest.of(request.getPage(), request.getSize(), Sort.by(orders));
+    }
+
+    private Specification<SaleItem> buildSpecification(SaleItemPaginationRequest request) {
+        Specification<SaleItem> spec = Specification.where(null);
+
+        boolean hasBrand = request.getFilterBrands() != null && !request.getFilterBrands().isEmpty();
+        boolean hasStorage = request.getFilterStorages() != null && !request.getFilterStorages().isEmpty();
+        boolean hasLowerOnly = request.getFilterPriceLower() != null && request.getFilterPriceUpper() == null;
+        boolean hasRange = request.getFilterPriceLower() != null && request.getFilterPriceUpper() != null;
+
+        if (!hasBrand && !hasStorage && !hasLowerOnly && !hasRange) {
+            return null; // no filters → no spec
+        }
+
+        if (hasBrand) {
+            spec = spec.and((root, q, cb) -> root.get("brand").get("name").in(request.getFilterBrands()));
+        }
+
+        if (hasStorage) {
+            boolean includeNull = request.getFilterStorages().contains(-1);
+            List<Integer> normalStorages = request.getFilterStorages().stream()
+                    .filter(v -> v != null && v != -1)
+                    .toList();
+
+            Specification<SaleItem> storageSpec = null;
+            if (!normalStorages.isEmpty()) {
+                storageSpec = (root, q, cb) -> root.get("storageGb").in(normalStorages);
+            }
+            if (includeNull) {
+                Specification<SaleItem> nullSpec = (root, q, cb) -> cb.isNull(root.get("storageGb"));
+                storageSpec = (storageSpec == null) ? nullSpec : storageSpec.or(nullSpec);
+            }
+            if (storageSpec != null) {
+                spec = spec.and(storageSpec);
+            }
+        }
+
+        if (hasLowerOnly) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("price"), request.getFilterPriceLower()));
+        } else if (hasRange) {
+            spec = spec.and((root, q, cb) -> cb.between(root.get("price"), request.getFilterPriceLower(), request.getFilterPriceUpper()));
+        }
+
+        return spec;
+    }
+
 }
