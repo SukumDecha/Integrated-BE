@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
+import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.service.SaleItemService;
@@ -29,21 +30,8 @@ public class SaleItemV2Controller {
 
     @Operation(summary = "Get all sale items with pagination, brand filter, sorting")
     @GetMapping
-    public PaginateResponse<SaleItemDetailResponse> getSaleItems(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String sortField,
-            @RequestParam(defaultValue = "asc") String sortDirection,
-            @RequestParam(required = false) List<String> filterBrands,
-            @RequestParam(required = false) List<Integer> filterStorages,
-            @RequestParam(required = false) Integer filterPriceLower,
-            @RequestParam(required = false) Integer filterPriceUpper,
-            @RequestParam(required = false) String filterSearch
-    ) {
-        return saleItemService.getSaleItems(
-                page, size, sortField, sortDirection,
-                filterBrands, filterStorages, filterPriceLower, filterPriceUpper, filterSearch
-        );
+    public PaginateResponse<SaleItemDetailResponse> getSaleItems(SaleItemPaginationRequest request) {
+        return saleItemService.getSaleItems(request);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
