@@ -1,5 +1,6 @@
 package sit.int202.ecommerce.modules.saleitem.service;
 
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -238,8 +239,8 @@ public class SaleItemService {
             List<String> filterBrands,
             List<Integer> filterStorages,
             Integer filterPriceLower,
-            Integer filterPriceUpper
-    ) {
+            Integer filterPriceUpper,
+            String filterSearch) {
         List<Sort.Order> sorts = new ArrayList<>();
         if (sortField != null && !sortField.isBlank()) {
             sorts.add(new Sort.Order(Sort.Direction.fromString(sortDirection), sortField));
@@ -254,10 +255,12 @@ public class SaleItemService {
         boolean hasStorage = filterStorages != null && !filterStorages.isEmpty();
         boolean hasLowerOnly = filterPriceLower != null && filterPriceUpper == null;
         boolean hasRange = filterPriceLower != null && filterPriceUpper != null;
+        boolean hasKeyword = filterSearch != null && !filterSearch.trim().isEmpty();
+
+        Specification<SaleItem> spec = Specification.where(null);
 
         // ถ้ามีเงื่อนไขใด ๆ ให้ใช้ Specification แล้ว return ทันที (ไม่ไปเข้าบล็อกเดิมข้างล่าง)
-        if (hasBrand || hasStorage || hasLowerOnly || hasRange) {
-            Specification<SaleItem> spec = Specification.where(null);
+        if (hasBrand || hasStorage || hasLowerOnly || hasRange || hasKeyword) {
 
             if (hasBrand) {
                 spec = spec.and((root, q, cb) -> root.get("brand").get("name").in(filterBrands));
@@ -290,11 +293,24 @@ public class SaleItemService {
             }
             // (upper อย่างเดียว -> ไม่ใช้ราคา)
 
+            //  keyword search in description / model / color
+            if (hasKeyword) {
+                String normalized = filterSearch.trim()
+                        .replaceAll("[^\\p{L}\\p{Nd}\\s]", "")  // ลบอักขระพิเศษ ยกเว้นตัวอักษร/ตัวเลข/ช่องว่าง
+                        .replaceAll("\\s+", " ");               // ลดช่องว่างซ้ำซ้อนให้เหลือ 1 ช่อง
+                String keyword = "%" + normalized.toLowerCase() + "%";
+                spec = spec.and((root, query, cb) -> cb.or(
+                        cb.like(cb.lower(root.get("description")), keyword),
+                        cb.like(cb.lower(root.get("model")), keyword),
+                        cb.like(cb.lower(root.get("color")), keyword)
+                ));
+            }
+
+
             Page<SaleItem> specResult = saleItemRepository.findAll(spec, pageable);
             Page<SaleItemDetailResponse> dtoPageSpec = specResult.map(saleItemMapper::toDetailResponse);
             return PaginationUtils.toPaginateResponse(dtoPageSpec);
         }
-
 
         Page<SaleItem> saleItems;
         if (filterBrands != null && !filterBrands.isEmpty()) {
