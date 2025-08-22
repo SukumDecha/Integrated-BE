@@ -293,9 +293,23 @@ public class SaleItemService {
         boolean hasStorage = request.getFilterStorages() != null && !request.getFilterStorages().isEmpty();
         boolean hasLowerOnly = request.getFilterPriceLower() != null && request.getFilterPriceUpper() == null;
         boolean hasRange = request.getFilterPriceLower() != null && request.getFilterPriceUpper() != null;
+        boolean hasKeyword = request.getFilterSearch() != null && !request.getFilterSearch() .trim().isEmpty();
 
-        if (!hasBrand && !hasStorage && !hasLowerOnly && !hasRange) {
+
+        if (!hasBrand && !hasStorage && !hasLowerOnly && !hasRange && !hasKeyword) {
             return null; // no filters → no spec
+        }
+
+        if (hasKeyword) {
+            String normalized = request.getFilterSearch()
+                    .replaceAll("[^\\p{L}\\p{Nd}\\s]", "")  // ลบอักขระพิเศษ ยกเว้นตัวอักษร/ตัวเลข/ช่องว่าง
+                    .replaceAll("\\s+", " ");               // ลดช่องว่างซ้ำซ้อนให้เหลือ 1 ช่อง
+            String keyword = "%" + normalized.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("description")), keyword),
+                    cb.like(cb.lower(root.get("model")), keyword),
+                    cb.like(cb.lower(root.get("color")), keyword)
+            ));
         }
 
         if (hasBrand) {

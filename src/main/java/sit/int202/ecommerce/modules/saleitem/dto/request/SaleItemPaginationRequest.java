@@ -12,4 +12,6 @@ public class SaleItemPaginationRequest extends PaginationRequest {
     private List<Integer> filterStorages;
     private Integer filterPriceLower;
     private Integer filterPriceUpper;
+
+    private String filterSearch;
 }
