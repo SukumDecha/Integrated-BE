@@ -12,6 +12,8 @@ import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemImageRequest;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -58,7 +60,8 @@ public class FileService {
             newFile.setFileSize(multipartFile.getSize());
             newFile.setFilePath(filePath);
             newFile.setDisplayOrder(i);
-            newFile.setCreatedOn(Instant.now());
+            newFile.setCreatedOn(LocalDateTime.now(ZoneId.of("Asia/Bangkok")));
+
 
             savedFiles.add(fileRepository.save(newFile));
         }
@@ -81,7 +84,8 @@ public class FileService {
         file.setFileSize(multipartFile.getSize());
         file.setFilePath(storageAdapter.getFilePath(storedFilename, refType));
         file.setDisplayOrder(order != null ? order : 0);
-        file.setCreatedOn(Instant.now());
+        file.setCreatedOn(LocalDateTime.now(ZoneId.of("Asia/Bangkok")));
+
 
         return fileRepository.save(file);
     }
@@ -137,7 +141,8 @@ public class FileService {
         file.setFileSize(multipartFile.getSize());
         file.setFilePath(filePath);
         file.setDisplayOrder(displayOrder != null ? displayOrder : 0);
-        file.setCreatedOn(Instant.now());
+        file.setCreatedOn(LocalDateTime.now(ZoneId.of("Asia/Bangkok")));
+
 
         return fileRepository.save(file);
     }
