@@ -302,13 +302,13 @@ public class SaleItemService {
 
         if (hasKeyword) {
             String normalized = request.getFilterSearch()
-                    .replaceAll("[^\\p{L}\\p{Nd}\\s]", "")  // ลบอักขระพิเศษ ยกเว้นตัวอักษร/ตัวเลข/ช่องว่าง
+                    .replaceAll("[^\\p{L}\\p{Nd}]", "") // ลบอักขระพิเศษทั้งหมด
                     .replaceAll("\\s+", " ");               // ลดช่องว่างซ้ำซ้อนให้เหลือ 1 ช่อง
             String keyword = "%" + normalized.toLowerCase() + "%";
             spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("description")), keyword),
-                    cb.like(cb.lower(root.get("model")), keyword),
-                    cb.like(cb.lower(root.get("color")), keyword)
+                    cb.like(cb.lower(cb.function("REPLACE", String.class, root.get("model"), cb.literal(" "), cb.literal(""))), keyword),
+                    cb.like(cb.lower(cb.function("REPLACE", String.class, root.get("description"), cb.literal(" "), cb.literal(""))), keyword),
+                    cb.like(cb.lower(cb.function("REPLACE", String.class, root.get("color"), cb.literal(" "), cb.literal(""))), keyword)
             ));
         }
 
