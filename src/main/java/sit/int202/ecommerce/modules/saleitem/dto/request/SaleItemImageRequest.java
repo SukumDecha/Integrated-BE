@@ -1,6 +1,7 @@
 package sit.int202.ecommerce.modules.saleitem.dto.request;
 
 
+import lombok.Builder;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 

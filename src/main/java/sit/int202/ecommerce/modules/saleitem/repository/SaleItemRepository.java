@@ -20,4 +20,6 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, Integer>, Jp
     List<Integer> findDistinctStorageGbIncludingNull();
 
 
+
+
 }

@@ -1,10 +1,14 @@
 package sit.int202.ecommerce.modules.user.model;
 
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 
@@ -15,6 +19,7 @@ import java.time.Instant;
                 @UniqueConstraint(columnNames = "email"),
                 @UniqueConstraint(columnNames = "nickname")
         })
+@EntityListeners(AuditingEntityListener.class)
 
 public class UserAccount {
     @Id
@@ -73,12 +78,21 @@ public class UserAccount {
     @Column(nullable = false)
     private boolean isActive = false;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "createdOn")
+    @Column(name = "createdOn",
+            insertable = false,
+            updatable = false
+    )
+    @CreationTimestamp
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX", timezone = "Asia/Bangkok")
     private Instant createdOn;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "updatedOn")
+
+    @Column(name = "updatedOn",
+            insertable = false,
+            updatable = false
+    )
+    @UpdateTimestamp
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX", timezone = "Asia/Bangkok")
     private Instant updatedOn;
 
 }
