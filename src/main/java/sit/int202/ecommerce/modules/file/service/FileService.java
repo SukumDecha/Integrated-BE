@@ -2,6 +2,7 @@ package sit.int202.ecommerce.modules.file.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
@@ -11,11 +12,18 @@ import sit.int202.ecommerce.modules.file.storage.FileStorageAdapter;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemImageRequest;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FileService {
@@ -58,7 +66,8 @@ public class FileService {
             newFile.setFileSize(multipartFile.getSize());
             newFile.setFilePath(filePath);
             newFile.setDisplayOrder(i);
-            newFile.setCreatedOn(Instant.now());
+            newFile.setCreatedOn(LocalDateTime.now(ZoneId.of("Asia/Bangkok")));
+
 
             savedFiles.add(fileRepository.save(newFile));
         }
@@ -81,7 +90,8 @@ public class FileService {
         file.setFileSize(multipartFile.getSize());
         file.setFilePath(storageAdapter.getFilePath(storedFilename, refType));
         file.setDisplayOrder(order != null ? order : 0);
-        file.setCreatedOn(Instant.now());
+        file.setCreatedOn(LocalDateTime.now(ZoneId.of("Asia/Bangkok")));
+
 
         return fileRepository.save(file);
     }
@@ -137,8 +147,29 @@ public class FileService {
         file.setFileSize(multipartFile.getSize());
         file.setFilePath(filePath);
         file.setDisplayOrder(displayOrder != null ? displayOrder : 0);
-        file.setCreatedOn(Instant.now());
+        file.setCreatedOn(LocalDateTime.now(ZoneId.of("Asia/Bangkok")));
+
 
         return fileRepository.save(file);
     }
+
+    public File getFileByStoredFilename(String storedFilename) {
+        return fileRepository.findByStoredFilename(storedFilename)
+                .orElse(null); // หรือ throw exception ถ้าจำเป็น
+    }
+
+    public String convertToBase64(String storedFilename) {
+        try {
+            Path path = Paths.get("uploads", storedFilename);
+            byte[] bytes = Files.readAllBytes(path);
+            String mimeType = Files.probeContentType(path);
+            return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+        } catch (IOException e) {
+            log.warn("Failed to convert to base64 for: {}", storedFilename);
+            return null;
+        }
+    }
+
+
+
 }

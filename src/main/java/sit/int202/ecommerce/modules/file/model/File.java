@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -24,7 +25,6 @@ public class File {
     @Column(name = "refType", nullable = false, length = 50)
     private String refType;
 
-    @NotNull
     @Column(name = "refId", nullable = false)
     private Integer refId;
 
@@ -63,7 +63,7 @@ public class File {
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "createdOn")
-    private Instant createdOn;
+    private LocalDateTime createdOn;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updatedOn")

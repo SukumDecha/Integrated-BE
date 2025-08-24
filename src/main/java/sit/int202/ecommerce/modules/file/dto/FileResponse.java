@@ -15,6 +15,8 @@ public class FileResponse {
 
     private String imageUrl;
     private Integer imageViewOrder;
+    private String url;
+    private String base64;
 
     public FileResponse(File file) {
         this.fileName = file.getStoredFilename();
@@ -24,4 +26,6 @@ public class FileResponse {
                 "/" +
                 file.getStoredFilename();
     }
+
+
 }
