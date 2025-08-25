@@ -4,6 +4,17 @@ spring:
   jackson:
     time-zone: Asia/Bangkok
     date-format: yyyy-MM-dd HH:mm:ss
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: sukumdecha02@gmail.com
+    password: rcdr abmc wrhd czrq
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 springdoc:
   swagger-ui:
     path: /v1/api-docs
@@ -12,3 +23,5 @@ server:
   servlet:
     encoding:
       charset: UTF-8
+app:
+  organizer-email: SSA-01
