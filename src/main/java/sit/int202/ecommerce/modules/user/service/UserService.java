@@ -8,10 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import sit.int202.ecommerce.common.utils.JwtUtils;
+import sit.int202.ecommerce.modules.email.service.EmailService;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
-import sit.int202.ecommerce.modules.file.service.FileService;
+import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
-import sit.int202.ecommerce.modules.user.dto.response.UserRegisterResponse;
+import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
@@ -28,9 +30,19 @@ public class UserService {
     private final UserAccountRepository repo;
     private final UserMapper userMapper;
 
-    private final FileService fileService;
+    private final EmailService emailService;
+    private final FileServiceImpl fileService;
 
-    public UserRegisterResponse register(UserRegisterRequest req, MultipartFile front, MultipartFile back) {
+    private final JwtUtils jwtUtils;
+
+    /**
+     * Register a new user
+     * @param req
+     * @param front
+     * @param back
+     * @return
+     */
+    public UserResponse register(UserRegisterRequest req, MultipartFile front, MultipartFile back) {
         if (repo.existsByEmail(req.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used");
         }
@@ -52,21 +64,46 @@ public class UserService {
             user.setNationalId(req.getNationalIdNumber());
         }
 
-        if (user.getType() == UserAccountType.SELLER) {
-            try {
-                FileEntity frontFile = fileService.saveFile(front, "nid", user.getId(), 0);
-                FileEntity backFile = fileService.saveFile(back, "nid", user.getId(), 1);
+        repo.save(user);
 
-                user.setNationalIdFrontImage(frontFile);
-                user.setNationalIdBackImage(backFile);
-            } catch (IOException e) {
-                log.error("Error saving national ID images", e);
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error saving national ID images");
-            }
+        if (user.getType() == UserAccountType.SELLER) {
+            FileEntity frontFile = fileService.uploadSingleFile(front, "nid", user.getId(), 0);
+            FileEntity backFile = fileService.uploadSingleFile(back, "nid", user.getId(), 0);
+
+            user.setNationalIdFrontImage(frontFile);
+            user.setNationalIdBackImage(backFile);
         }
 
+        String token = jwtUtils.generateToken(user.getEmail());
+        emailService.sendVerificationEmail(user.getEmail(), user.getNickname(), token);
 
         repo.save(user);
+        return userMapper.toRegisterResponse(user);
+    }
+
+    /**
+     * Verify email using JWT token
+     * @param token
+     * @return
+     */
+    public UserResponse verifyEmail(String token) {
+        String email;
+        try {
+            email = jwtUtils.getUsernameFromToken(token);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired token");
+        }
+
+        UserAccount user = repo.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.isActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is already active");
+        }
+
+        user.setActive(true);
+        repo.save(user);
+
         return userMapper.toRegisterResponse(user);
     }
 

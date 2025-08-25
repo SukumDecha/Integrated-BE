@@ -5,7 +5,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 import sit.int202.ecommerce.modules.file.mapper.FileMapper;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
-import sit.int202.ecommerce.modules.file.service.FileService;
+import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
@@ -22,7 +22,7 @@ public class SaleItemMapper {
 
     private final ModelMapper modelMapper;
     private final FileMapper fileMapper;
-    private final FileService fileService;
+    private final FileServiceImpl fileService;
 
     public SaleItemDetailResponse toDetailResponse(SaleItem saleItem) {
         SaleItemDetailResponse dto = modelMapper.map(saleItem, SaleItemDetailResponse.class);
@@ -31,7 +31,7 @@ public class SaleItemMapper {
             dto.setBrandName(saleItem.getBrand().getName());
         }
 
-        List<FileEntity> files = fileService.getFilesByRef("SALE_ITEM", saleItem.getId());
+        List<FileEntity> files = fileService.getFilesByReference("SALE_ITEM", saleItem.getId());
         if (!files.isEmpty()) {
             dto.setSaleItemImages(
                     files.stream()

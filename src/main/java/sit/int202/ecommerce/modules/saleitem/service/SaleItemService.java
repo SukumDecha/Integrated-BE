@@ -21,7 +21,7 @@ import sit.int202.ecommerce.modules.brand.model.Brand;
 import sit.int202.ecommerce.modules.brand.service.BrandService;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
 import sit.int202.ecommerce.modules.file.repository.FileRepository;
-import sit.int202.ecommerce.modules.file.service.FileService;
+import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemImageRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationRequest;
@@ -33,7 +33,6 @@ import sit.int202.ecommerce.modules.saleitem.mapper.SaleItemMapper;
 import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,7 +44,7 @@ public class SaleItemService {
     private final BrandService brandService;
     private final SaleItemMapper saleItemMapper;
     private final BrandMapper brandMapper;
-    private final FileService fileService;
+    private final FileServiceImpl fileService;
     private final FileRepository fileRepository;
     private final EntityManager em;
 
@@ -77,45 +76,40 @@ public class SaleItemService {
 
         SaleItem tempSaleItem = saleItemMapper.toEntity(item);
         tempSaleItem.setBrand(brand);
+
         SaleItem saleItem = saleItemRepository.save(tempSaleItem);
 
-        try {
-            List<SaleItemImageRequest> imageInfos = item.getImageInfos();
-            List<FileEntity> uploadedFiles = new ArrayList<>();
+        List<SaleItemImageRequest> imageInfos = item.getImageInfos();
+        List<FileEntity> uploadedFiles = new ArrayList<>();
 
-            if (imageInfos != null) {
-                long newImageCount = imageInfos.size();
+        if (imageInfos != null) {
+            long newImageCount = imageInfos.size();
 
-                if (newImageCount > 4) {
-                    throw new FileUploadException("You can upload up to 4 images only.");
-                }
+            if (newImageCount > 4) {
+                throw new FileUploadException("You can upload up to 4 images only.");
+            }
 
-                for (SaleItemImageRequest info : imageInfos) {
-                    if (info.getImageFile() != null) {
-                        if (info.getImageFile().getSize() > 2 * 1024 * 1024) {
-                            throw new FileUploadException("Each image must be smaller than 2MB.");
-                        }
-
-                        FileEntity file = fileService.saveFile(
-                                info.getImageFile(),
-                                "SALE_ITEM",
-                                saleItem.getId(),
-                                info.getOrder() != null ? info.getOrder() : 0
-                        );
-
-                        file.setDisplayOrder(info.getOrder() != null ? info.getOrder() : 0);
-                        uploadedFiles.add(file);
+            for (SaleItemImageRequest info : imageInfos) {
+                if (info.getImageFile() != null) {
+                    if (info.getImageFile().getSize() > 2 * 1024 * 1024) {
+                        throw new FileUploadException("Each image must be smaller than 2MB.");
                     }
-                }
 
-                if (!uploadedFiles.isEmpty()) {
-                    fileRepository.saveAll(uploadedFiles);
-                    em.refresh(saleItem);
+                    FileEntity file = fileService.uploadSingleFile(
+                            info.getImageFile(),
+                            "SALE_ITEM",
+                            saleItem.getId(),
+                            info.getOrder() != null ? info.getOrder() : 0
+                    );
+
+                    file.setDisplayOrder(info.getOrder() != null ? info.getOrder() : 0);
+                    uploadedFiles.add(file);
                 }
             }
 
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload image(s)", e);
+            if (!uploadedFiles.isEmpty()) {
+                fileRepository.saveAll(uploadedFiles);
+            }
         }
 
         em.refresh(saleItem);
@@ -143,13 +137,13 @@ public class SaleItemService {
         List<SaleItemImageRequest> imageInfos = Optional.ofNullable(item.getImageInfos())
                 .orElse(new ArrayList<>());
 
-        List<FileEntity> existingFiles = fileService.getFilesByRef("SALE_ITEM", id);
+        List<FileEntity> existingFiles = fileService.getFilesByReference("SALE_ITEM", id);
         List<FileEntity> newFilesToStore = new ArrayList<>();
         Set<String> providedFileNames = new HashSet<>();
 
         if (imageInfos == null || imageInfos.isEmpty()) {
             // Remove all images
-            existingFiles.forEach(f -> fileService.deleteFile(f.getId()));
+            existingFiles.forEach(f -> fileService.deleteFileById(f.getId()));
             existing.setFiles(new ArrayList<>());
             System.out.println("Removed all files");
         } else {
@@ -167,7 +161,7 @@ public class SaleItemService {
             // Delete any existing file not in provided list
             existingFiles.stream()
                     .filter(f -> !providedFileNames.contains(f.getStoredFilename()))
-                    .forEach(f -> fileService.deleteFile(f.getId()));
+                    .forEach(f -> fileService.deleteFileById(f.getId()));
 
             // Process new files
             for (SaleItemImageRequest info : imageInfos) {
@@ -175,12 +169,9 @@ public class SaleItemService {
                     if (info.getImageFile().getSize() > 2 * 1024 * 1024) {
                         throw new FileUploadException("Each image must be smaller than 2MB.");
                     }
-                    try {
-                        FileEntity newFile = fileService.saveFile( info.getImageFile(), "SALE_ITEM", id,info.getOrder());
-                        newFilesToStore.add(newFile);
-                    } catch (IOException e) {
-                        throw new FileUploadException("Failed to store new image: " + e.getMessage());
-                    }
+
+                    FileEntity newFile = fileService.uploadSingleFile( info.getImageFile(), "SALE_ITEM", id,info.getOrder());
+                    newFilesToStore.add(newFile);
                 }
             }
 
@@ -215,10 +206,10 @@ public class SaleItemService {
             throw new EntityNotFoundException("Sale item with ID " + id + " not found");
         }
 
-        List<FileEntity> files = fileService.getFilesByRef("SALE_ITEM", id);
+        List<FileEntity> files = fileService.getFilesByReference("SALE_ITEM", id);
 
         for (FileEntity file : files) {
-            fileService.deleteFile(file.getId());
+            fileService.deleteFileById(file.getId());
         }
 
         saleItemRepository.deleteById(id);

@@ -10,14 +10,14 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
-import sit.int202.ecommerce.modules.user.dto.response.UserRegisterResponse;
+import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.service.UserService;
 
 import java.net.URI;
 
 @Tag(name = "User", description = "APIs for user management")
 @RestController
-@RequestMapping("/v2")
+@RequestMapping("/v2/users")
 public class UserV2Controller {
 
     private final UserService service;
@@ -35,7 +35,8 @@ public class UserV2Controller {
             @ApiResponse(responseCode = "201", description = "User registered successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public ResponseEntity<UserRegisterResponse> register(
+    public ResponseEntity<UserResponse> register(
+            @Parameter(description = "User registration data", required = true)
             @RequestPart(value = "data") @Validated UserRegisterRequest data,
 
             @Parameter(description = "Front side of ID card")
@@ -44,8 +45,25 @@ public class UserV2Controller {
             @Parameter(description = "Back side of ID card")
             @RequestPart(value = "idCardImageBack", required = false) MultipartFile nationalIdBack
     ) {
-        UserRegisterResponse response = service.register(data, nationalIdFront, nationalIdBack);
+        UserResponse response = service.register(data, nationalIdFront, nationalIdBack);
         return ResponseEntity.created(URI.create("/v2/users/" + response.getId())).body(response);
     }
+
+    @PostMapping(value = "/verify-email")
+    @Operation(
+            summary = "Verify email",
+            description = "Verifies a user's email using a token"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Email verified successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
+    public ResponseEntity<UserResponse> verifyEmail(
+            @RequestParam("jwtToken") String token
+    ) {
+        UserResponse response = service.verifyEmail(token);
+        return ResponseEntity.ok(response);
+    }
+
 
 }
