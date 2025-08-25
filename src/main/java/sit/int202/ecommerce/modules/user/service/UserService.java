@@ -3,18 +3,18 @@ package sit.int202.ecommerce.modules.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import sit.int202.ecommerce.modules.file.dto.FileResponse;
-import sit.int202.ecommerce.modules.file.model.File;
-import sit.int202.ecommerce.modules.file.service.FileService;
-import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemImageRequest;
+import sit.int202.ecommerce.common.utils.JwtUtils;
+import sit.int202.ecommerce.modules.email.service.EmailService;
+import sit.int202.ecommerce.modules.file.model.FileEntity;
+import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
-import sit.int202.ecommerce.modules.user.dto.response.UserRegisterResponse;
+import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
+import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.repository.UserAccountRepository;
@@ -28,14 +28,21 @@ import java.io.IOException;
 public class UserService {
 
     private final UserAccountRepository repo;
-    private final PasswordEncoder encoder;
-    private final FileService fileService;
-    private SaleItemImageRequest nationalIdFrontImage;
-    private SaleItemImageRequest nationalIdBackImage;
+    private final UserMapper userMapper;
 
-    public UserRegisterResponse register(UserRegisterRequest req, MultipartFile front, MultipartFile back) throws IOException {
+    private final EmailService emailService;
+    private final FileServiceImpl fileService;
 
+    private final JwtUtils jwtUtils;
 
+    /**
+     * Register a new user
+     * @param req
+     * @param front
+     * @param back
+     * @return
+     */
+    public UserResponse register(UserRegisterRequest req, MultipartFile front, MultipartFile back) {
         if (repo.existsByEmail(req.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used");
         }
@@ -43,66 +50,61 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Nickname already used");
         }
 
-        UserAccount u = new UserAccount();
-        u.setType(req.getUserAccountType());
-        u.setFullname(req.getFullName().trim());
-        u.setNickname(req.getNickname().trim());
-        u.setEmail(req.getEmail().trim().toLowerCase());
-        u.setPassword(encoder.encode(req.getPassword()));
-        u.setActive(false);
-
-        if (req.getUserAccountType() == UserAccountType.SELLER) {
-            u.setMobileNumber(req.getMobileNumber());
-            u.setBankAccountNumber(req.getBankAccountNumber());
-            u.setBankName(req.getBankName());
-            u.setNationalId(req.getNationalIdNumber());
+        if (req.getUserType() == UserAccountType.SELLER && (front == null || back == null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "National ID images are required for sellers");
         }
 
-        // Save user ก่อน เพื่อให้มี u.getId()
-        repo.save(u);
+        UserAccount user = userMapper.toEntity(req);
+        user.setActive(false);
 
-        if (u.getType() == UserAccountType.SELLER) {
-            File frontFile = fileService.saveFile(front, "nid", u.getId(), 0);
-            File backFile = fileService.saveFile(back, "nid", u.getId(), 1);
-
-            u.setNationalIdFrontImage(frontFile.getFilePath());
-            u.setNationalIdBackImage(backFile.getFilePath());
+        if (req.getUserType() == UserAccountType.SELLER) {
+            user.setMobileNumber(req.getMobileNumber());
+            user.setBankAccountNumber(req.getBankAccountNumber());
+            user.setBankName(req.getBankName());
+            user.setNationalId(req.getNationalIdNumber());
         }
 
+        repo.save(user);
 
-        repo.save(u);
+        if (user.getType() == UserAccountType.SELLER) {
+            FileEntity frontFile = fileService.uploadSingleFile(front, "nid", user.getId(), 0);
+            FileEntity backFile = fileService.uploadSingleFile(back, "nid", user.getId(), 0);
 
-        UserRegisterResponse resp = new UserRegisterResponse();
-        resp.setId(u.getId());
-        resp.setNickname(u.getNickname());
-        resp.setEmail(u.getEmail());
-        resp.setFullName(u.getFullname());
-        resp.setAccountType(u.getType());
-        resp.setCreatedOn(u.getCreatedOn());
-        resp.setUpdatedOn(u.getUpdatedOn());
-        resp.setBankName(u.getBankName());
-        resp.setBankAccountNumber(u.getBankAccountNumber());
-        resp.setMobileNumber(u.getMobileNumber());
-        resp.setNationalIdNumber(u.getNationalId());
+            user.setNationalIdFrontImage(frontFile);
+            user.setNationalIdBackImage(backFile);
+        }
 
-        File frontFile = fileService.getFileByStoredFilename(u.getNationalIdFrontImage());
-        File backFile = fileService.getFileByStoredFilename(u.getNationalIdBackImage());
+        String token = jwtUtils.generateToken(user.getEmail());
+        emailService.sendVerificationEmail(user.getEmail(), user.getNickname(), token);
 
-        resp.setNationalIdFront(buildFileResponse(frontFile));
-        resp.setNationalIdBack(buildFileResponse(backFile));
-
-
-        return resp;
+        repo.save(user);
+        return userMapper.toRegisterResponse(user);
     }
 
-    private FileResponse buildFileResponse(File file) {
-        if (file == null) return null;
-        return FileResponse.builder()
-                .fileName(file.getStoredFilename())
-                .url("/uploads/" + file.getStoredFilename())
-                .base64(fileService.convertToBase64(file.getStoredFilename()))
-                .build();
-    }
+    /**
+     * Verify email using JWT token
+     * @param token
+     * @return
+     */
+    public UserResponse verifyEmail(String token) {
+        String email;
+        try {
+            email = jwtUtils.getUsernameFromToken(token);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired token");
+        }
 
+        UserAccount user = repo.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.isActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is already active");
+        }
+
+        user.setActive(true);
+        repo.save(user);
+
+        return userMapper.toRegisterResponse(user);
+    }
 
 }

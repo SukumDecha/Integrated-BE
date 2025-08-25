@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import sit.int202.ecommerce.modules.file.model.File;
+import sit.int202.ecommerce.modules.file.model.FileEntity;
 
 @Data
 @Builder
@@ -18,7 +18,7 @@ public class FileResponse {
     private String url;
     private String base64;
 
-    public FileResponse(File file) {
+    public FileResponse(FileEntity file) {
         this.fileName = file.getStoredFilename();
         this.imageViewOrder = file.getDisplayOrder();
         this.imageUrl = "/uploads/" +

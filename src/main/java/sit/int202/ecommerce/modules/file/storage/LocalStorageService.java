@@ -15,45 +15,11 @@ import java.nio.file.Paths;
 public class LocalStorageService implements FileStorageAdapter {
 
     @Value("${app.file.upload-dir}")
-    private String uploadDir; // อ่านค่าจาก application.properties หรือ .env เช่น "uploads"
+    private String rootDir;
 
-    // ใช้สำหรับเก็บไฟล์ทั่วไป (ไม่ระบุหมวด)
     @Override
-    public String store(MultipartFile file, String storedFilename) {
-        try {
-            Path destination = Paths.get(uploadDir, storedFilename);
-            Files.createDirectories(destination.getParent()); // สร้างโฟลเดอร์ถ้ายังไม่มี
-            file.transferTo(destination.toFile());
-            log.info("File stored at: {}", destination.toAbsolutePath());
-            return destination.toString(); // คืน path ที่ใช้เก็บไฟล์จริง
-        } catch (IOException e) {
-            log.error("Failed to store file {}", storedFilename, e);
-            throw new RuntimeException("Failed to store file", e);
-        }
-    }
-
-    // ลบไฟล์จาก root directory
-    @Override
-    public boolean delete(String storedFilename) {
-        Path filePath = Paths.get(uploadDir, storedFilename);
-        try {
-            return Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            log.error("Failed to delete file {}", storedFilename, e);
-            return false;
-        }
-    }
-
-    // คืน path เต็มจากชื่อไฟล์เฉยๆ (ไม่ระบุหมวด)
-    @Override
-    public String getStoragePath(String storedFilename) {
-        return Paths.get(uploadDir, storedFilename).toString();
-    }
-
-    // ใช้สำหรับเก็บไฟล์ใน subdirectory เช่น sale-items/
-    @Override
-    public String saveFile(MultipartFile file, String subDirectory, String storedFilename) throws IOException {
-        Path destination = Paths.get(uploadDir, subDirectory, storedFilename);
+    public String storeFile(MultipartFile file, String subDirectory, String storedFilename) throws IOException {
+        Path destination = buildPath(subDirectory, storedFilename);
         Files.createDirectories(destination.getParent());
         file.transferTo(destination.toFile());
         log.info("File stored at: {}", destination.toAbsolutePath());
@@ -62,18 +28,26 @@ public class LocalStorageService implements FileStorageAdapter {
 
     @Override
     public boolean deleteFile(String storedFilename, String subDirectory) throws IOException {
-        Path filePath = Paths.get(uploadDir, subDirectory, storedFilename);
+        Path path = buildPath(subDirectory, storedFilename);
         try {
-            System.out.println("🧾 Trying to delete file from disk at path: " + filePath.toAbsolutePath());
-            return Files.deleteIfExists(filePath);
+            return Files.deleteIfExists(path);
         } catch (IOException e) {
-            log.error("Failed to delete file {}/{}", subDirectory, storedFilename, e);
+            log.error("Failed to delete file {} in subdirectory {}", storedFilename, subDirectory, e);
             return false;
         }
     }
 
     @Override
     public String getFilePath(String storedFilename, String subDirectory) {
-        return Paths.get(uploadDir, subDirectory, storedFilename).toString();
+        return buildPath(subDirectory, storedFilename).toString();
+    }
+
+    /**
+     * Build the full Path for a file, including optional subdirectory.
+     */
+    private Path buildPath(String subDirectory, String filename) {
+        return subDirectory == null || subDirectory.isBlank()
+                ? Paths.get(rootDir, filename)
+                : Paths.get(rootDir, subDirectory, filename);
     }
 }

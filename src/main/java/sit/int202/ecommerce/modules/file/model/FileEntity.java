@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "file_metadata")
-public class File {
+public class FileEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -27,7 +27,7 @@ public class File {
 
     @Column(name = "refId", nullable = false)
     private Integer refId;
-
+//
 //    @Size(max = 50)
 //    @NotNull
 //    @Column(name = "usageType", nullable = false, length = 50)
