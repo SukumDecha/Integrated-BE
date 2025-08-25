@@ -1,11 +1,10 @@
 package sit.int202.ecommerce.modules.file.controller;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import sit.int202.ecommerce.modules.file.model.File;
+import sit.int202.ecommerce.modules.file.model.FileEntity;
 import sit.int202.ecommerce.modules.file.service.FileService;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ public class FileController {
 
     // ✅ GET: ดึงรายการไฟล์ของ entity (sale item, brand, user, etc.)
     @GetMapping
-    public ResponseEntity<List<File>> getFilesByRef(
+    public ResponseEntity<List<FileEntity>> getFilesByRef(
             @RequestParam("refType") String refType,
             @RequestParam("refId") Integer refId
     ) {

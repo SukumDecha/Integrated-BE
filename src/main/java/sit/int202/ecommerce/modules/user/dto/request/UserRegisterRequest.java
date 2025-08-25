@@ -1,5 +1,6 @@
 package sit.int202.ecommerce.modules.user.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,29 +8,44 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
 import sit.int202.ecommerce.modules.user.validation.PasswordPolicy;
-import sit.int202.ecommerce.modules.user.validation.SellerGroup;
 
 @Data
+@Schema(description = "Request object for registering a new user")
 public class UserRegisterRequest {
+
     @NotNull
-    private UserAccountType userAccountType;
+    @Schema(description = "Type of user account", example = "CUSTOMER")
+    private UserAccountType userType;
 
-    @NotBlank @Size(min = 4, max = 40)
-    private String fullName;
+    @NotBlank
+    @Schema(description = "User nickname", example = "johnny")
+    private String nickname;
 
-    @NotBlank private String nickname;
-
-    @NotBlank @Email
+    @NotBlank
+    @Email
+    @Schema(description = "User email address", example = "john@example.com")
     private String email;
 
-    @NotBlank @PasswordPolicy
+    @NotBlank
+    @Size(min = 4, max = 40)
+    @Schema(description = "Full name of the user", example = "John Doe")
+    private String fullName;
+
+    @NotBlank
+    @PasswordPolicy
+    @Schema(description = "User password (must satisfy password policy)", example = "P@ssw0rd123")
     private String password;
 
-    // seller-only (validateเมื่อใช้ SellerGroup)
-    @NotBlank(groups = SellerGroup.class) private String mobileNumber;
-    @NotBlank(groups = SellerGroup.class) private String bankAccountNumber;
-    @NotBlank(groups = SellerGroup.class) private String bankName;
-    @NotBlank(groups = SellerGroup.class) private String nationalIdNumber;
+    // Seller-only fields
+    @Schema(description = "Mobile number of seller (required if userType is SELLER)", example = "0812345678")
+    private String mobileNumber;
 
+    @Schema(description = "Bank account number of seller (required if userType is SELLER)", example = "1234567890")
+    private String bankAccountNumber;
 
+    @Schema(description = "Bank name of seller (required if userType is SELLER)", example = "Bangkok Bank")
+    private String bankName;
+
+    @Schema(description = "National ID number of seller (required if userType is SELLER)", example = "1234567890123")
+    private String nationalIdNumber;
 }

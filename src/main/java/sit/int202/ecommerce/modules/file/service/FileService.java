@@ -6,16 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
-import sit.int202.ecommerce.modules.file.model.File;
+import sit.int202.ecommerce.modules.file.model.FileEntity;
 import sit.int202.ecommerce.modules.file.repository.FileRepository;
 import sit.int202.ecommerce.modules.file.storage.FileStorageAdapter;
-import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemImageRequest;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -31,11 +29,11 @@ public class FileService {
     private final FileRepository fileRepository;
     private final FileStorageAdapter storageAdapter;
 
-    public List<File> getFilesByRef(String refType, Integer refId) {
+    public List<FileEntity> getFilesByRef(String refType, Integer refId) {
         return fileRepository.findByRefTypeAndRefIdOrderByDisplayOrderAsc(refType, refId);
     }
 
-    public List<File> uploadFiles(List<MultipartFile> multipartFiles, String refType, Integer refId) throws IOException {
+    public List<FileEntity> uploadFiles(List<MultipartFile> multipartFiles, String refType, Integer refId) throws IOException {
         final int MAX_FILES = 4;
         final long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -43,7 +41,7 @@ public class FileService {
             throw new FileUploadException("Maximum 4 pictures are allowed.");
         }
 
-        List<File> savedFiles = new ArrayList<>();
+        List<FileEntity> savedFiles = new ArrayList<>();
 
         for (int i = 0; i < multipartFiles.size(); i++) {
             MultipartFile multipartFile = multipartFiles.get(i);
@@ -57,7 +55,7 @@ public class FileService {
 
             String filePath = storageAdapter.store(multipartFile, storedFilename);
 
-            File newFile = new File();
+            FileEntity newFile = new FileEntity();
             newFile.setRefType(refType);
             newFile.setRefId(refId);
             newFile.setOriginalFilename(originalFilename);
@@ -75,13 +73,13 @@ public class FileService {
         return savedFiles;
     }
 
-    public File saveFile(MultipartFile multipartFile, String refType, Integer refId, Integer order) throws IOException {
+    public FileEntity saveFile(MultipartFile multipartFile, String refType, Integer refId, Integer order) throws IOException {
         String extension = getFileExtension(multipartFile.getOriginalFilename());
         String storedFilename = UUID.randomUUID() + "." + extension;
 
         storageAdapter.saveFile(multipartFile, refType, storedFilename);
 
-        File file = new File();
+        var file = new FileEntity();
         file.setRefType(refType);
         file.setRefId(refId);
         file.setOriginalFilename(multipartFile.getOriginalFilename());
@@ -91,7 +89,6 @@ public class FileService {
         file.setFilePath(storageAdapter.getFilePath(storedFilename, refType));
         file.setDisplayOrder(order != null ? order : 0);
         file.setCreatedOn(LocalDateTime.now(ZoneId.of("Asia/Bangkok")));
-
 
         return fileRepository.save(file);
     }
@@ -120,7 +117,7 @@ public class FileService {
         }).orElse(false);
     }
 
-    public List<File> getFilesByRefAndUsage(String refType, Integer refId) {
+    public List<FileEntity> getFilesByRefAndUsage(String refType, Integer refId) {
         return fileRepository.findByRefTypeAndRefIdOrderByDisplayOrderAsc(refType, refId);
     }
 
@@ -133,12 +130,12 @@ public class FileService {
         return filename.substring(dotIndex + 1).toLowerCase();
     }
 
-    public File storeFile(String refType, Integer refId, MultipartFile multipartFile, Integer displayOrder) throws IOException {
+    public FileEntity storeFile(String refType, Integer refId, MultipartFile multipartFile, Integer displayOrder) throws IOException {
         String extension = getFileExtension(multipartFile.getOriginalFilename());
         String storedFilename = UUID.randomUUID() + "." + extension;
         String filePath = storageAdapter.store(multipartFile, storedFilename);
 
-        File file = new File();
+        FileEntity file = new FileEntity();
         file.setRefType(refType);
         file.setRefId(refId);
         file.setOriginalFilename(multipartFile.getOriginalFilename());
@@ -153,7 +150,7 @@ public class FileService {
         return fileRepository.save(file);
     }
 
-    public File getFileByStoredFilename(String storedFilename) {
+    public FileEntity getFileByStoredFilename(String storedFilename) {
         return fileRepository.findByStoredFilename(storedFilename)
                 .orElse(null); // หรือ throw exception ถ้าจำเป็น
     }

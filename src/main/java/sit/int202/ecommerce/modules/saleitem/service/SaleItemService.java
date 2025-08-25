@@ -19,7 +19,7 @@ import sit.int202.ecommerce.modules.brand.dto.response.BrandResponse;
 import sit.int202.ecommerce.modules.brand.mapper.BrandMapper;
 import sit.int202.ecommerce.modules.brand.model.Brand;
 import sit.int202.ecommerce.modules.brand.service.BrandService;
-import sit.int202.ecommerce.modules.file.model.File;
+import sit.int202.ecommerce.modules.file.model.FileEntity;
 import sit.int202.ecommerce.modules.file.repository.FileRepository;
 import sit.int202.ecommerce.modules.file.service.FileService;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
@@ -81,7 +81,7 @@ public class SaleItemService {
 
         try {
             List<SaleItemImageRequest> imageInfos = item.getImageInfos();
-            List<File> uploadedFiles = new ArrayList<>();
+            List<FileEntity> uploadedFiles = new ArrayList<>();
 
             if (imageInfos != null) {
                 long newImageCount = imageInfos.size();
@@ -96,7 +96,7 @@ public class SaleItemService {
                             throw new FileUploadException("Each image must be smaller than 2MB.");
                         }
 
-                        File file = fileService.saveFile(
+                        FileEntity file = fileService.saveFile(
                                 info.getImageFile(),
                                 "SALE_ITEM",
                                 saleItem.getId(),
@@ -143,8 +143,8 @@ public class SaleItemService {
         List<SaleItemImageRequest> imageInfos = Optional.ofNullable(item.getImageInfos())
                 .orElse(new ArrayList<>());
 
-        List<File> existingFiles = fileService.getFilesByRef("SALE_ITEM", id);
-        List<File> newFilesToStore = new ArrayList<>();
+        List<FileEntity> existingFiles = fileService.getFilesByRef("SALE_ITEM", id);
+        List<FileEntity> newFilesToStore = new ArrayList<>();
         Set<String> providedFileNames = new HashSet<>();
 
         if (imageInfos == null || imageInfos.isEmpty()) {
@@ -176,7 +176,7 @@ public class SaleItemService {
                         throw new FileUploadException("Each image must be smaller than 2MB.");
                     }
                     try {
-                        File newFile = fileService.saveFile( info.getImageFile(), "SALE_ITEM", id,info.getOrder());
+                        FileEntity newFile = fileService.saveFile( info.getImageFile(), "SALE_ITEM", id,info.getOrder());
                         newFilesToStore.add(newFile);
                     } catch (IOException e) {
                         throw new FileUploadException("Failed to store new image: " + e.getMessage());
@@ -185,7 +185,7 @@ public class SaleItemService {
             }
 
             // Update order for existing images
-            for (File file : existingFiles) {
+            for (FileEntity file : existingFiles) {
                 if (providedFileNames.contains(file.getStoredFilename())) {
                     imageInfos.stream()
                             .filter(i -> file.getStoredFilename().equals(i.getFileName()))
@@ -195,14 +195,14 @@ public class SaleItemService {
             }
 
             // Merge existing + new files
-            List<File> updatedFileList = new ArrayList<>();
+            List<FileEntity> updatedFileList = new ArrayList<>();
             updatedFileList.addAll(existingFiles.stream()
                     .filter(f -> providedFileNames.contains(f.getStoredFilename()))
                     .toList());
             updatedFileList.addAll(newFilesToStore);
 
             existing.setFiles(updatedFileList.stream()
-                    .sorted(Comparator.comparing(File::getDisplayOrder))
+                    .sorted(Comparator.comparing(FileEntity::getDisplayOrder))
                     .collect(Collectors.toList()));
         }
 
@@ -215,9 +215,9 @@ public class SaleItemService {
             throw new EntityNotFoundException("Sale item with ID " + id + " not found");
         }
 
-        List<File> files = fileService.getFilesByRef("SALE_ITEM", id);
+        List<FileEntity> files = fileService.getFilesByRef("SALE_ITEM", id);
 
-        for (File file : files) {
+        for (FileEntity file : files) {
             fileService.deleteFile(file.getId());
         }
 

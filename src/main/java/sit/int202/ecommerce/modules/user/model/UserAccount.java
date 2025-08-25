@@ -1,26 +1,22 @@
 package sit.int202.ecommerce.modules.user.model;
 
-
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.*;
+import org.hibernate.annotations.Where;
+import sit.int202.ecommerce.modules.file.model.FileEntity;
 
 import java.time.Instant;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "user_account" ,
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = "email"),
                 @UniqueConstraint(columnNames = "nickname")
         })
-@EntityListeners(AuditingEntityListener.class)
-
 public class UserAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -67,13 +63,15 @@ public class UserAccount {
     @Column(name = "nationalId", length = 20)
     private String nationalId;
 
-    @Size(max = 255)
-    @Column(name = "nationalIdFrontImage")
-    private String nationalIdFrontImage;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "refId", referencedColumnName = "id", insertable = false, updatable = false)
+    @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'nationalIdFrontImage'")
+    private FileEntity nationalIdFrontImage;
 
-    @Size(max = 255)
-    @Column(name = "nationalIdBackImage")
-    private String nationalIdBackImage;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "refId", referencedColumnName = "id", insertable = false, updatable = false)
+    @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'nationalIdBackImage'")
+    private FileEntity nationalIdBackImage;
 
     @Column(nullable = false)
     private boolean isActive = false;
@@ -82,17 +80,11 @@ public class UserAccount {
             insertable = false,
             updatable = false
     )
-    @CreationTimestamp
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX", timezone = "Asia/Bangkok")
     private Instant createdOn;
-
 
     @Column(name = "updatedOn",
             insertable = false,
             updatable = false
     )
-    @UpdateTimestamp
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX", timezone = "Asia/Bangkok")
     private Instant updatedOn;
-
 }
