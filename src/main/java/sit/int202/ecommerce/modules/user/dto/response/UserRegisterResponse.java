@@ -2,10 +2,7 @@ package sit.int202.ecommerce.modules.user.dto.response;
 
 
 import lombok.Data;
-import sit.int202.ecommerce.modules.file.dto.FileResponse;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
-
-import java.time.Instant;
 
 
 @Data

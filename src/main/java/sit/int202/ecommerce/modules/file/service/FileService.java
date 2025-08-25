@@ -33,7 +33,7 @@ public class FileService {
         return fileRepository.findByRefTypeAndRefIdOrderByDisplayOrderAsc(refType, refId);
     }
 
-    public List<FileEntity> uploadFiles(List<MultipartFile> multipartFiles, String refType, Integer refId) throws IOException {
+    public List<FileEntity> uploadFiles(List<MultipartFile> multipartFiles, String refType, Integer refId) {
         final int MAX_FILES = 4;
         final long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 

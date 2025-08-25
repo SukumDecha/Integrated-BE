@@ -2,8 +2,6 @@ package sit.int202.ecommerce.modules.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,10 +38,10 @@ public class UserV2Controller {
     public ResponseEntity<UserRegisterResponse> register(
             @RequestPart(value = "data") @Validated UserRegisterRequest data,
 
-            @Parameter(description = "Front side of ID card", required = false)
+            @Parameter(description = "Front side of ID card")
             @RequestPart(value = "idCardImageFront", required = false) MultipartFile nationalIdFront,
 
-            @Parameter(description = "Back side of ID card", required = false)
+            @Parameter(description = "Back side of ID card")
             @RequestPart(value = "idCardImageBack", required = false) MultipartFile nationalIdBack
     ) {
         UserRegisterResponse response = service.register(data, nationalIdFront, nationalIdBack);
