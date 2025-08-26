@@ -22,7 +22,7 @@ public interface FileService {
      * @param refId The ID of the reference entity
      * @return List of FileEntity representing the uploaded files
      */
-    public List<FileEntity> uploadMultipleFiles(List<MultipartFile> multipartFiles, String refType, Integer refId);
+    public List<FileEntity> uploadMultipleFiles(List<MultipartFile> multipartFiles, String refType, Integer refId, String usageType);
 
     /**
      * Save a single file and associate it with a reference type and ID
@@ -32,7 +32,7 @@ public interface FileService {
      * @param order The display order of the file
      * @return FileEntity representing the uploaded file
      */
-    public FileEntity uploadSingleFile(MultipartFile multipartFile, String refType, Integer refId, Integer order);
+    public FileEntity uploadSingleFile(MultipartFile multipartFile, String refType, Integer refId, Integer order, String usageType);
 
     /**
      * Delete a file by its ID

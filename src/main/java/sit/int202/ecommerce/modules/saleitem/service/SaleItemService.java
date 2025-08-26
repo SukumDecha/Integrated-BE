@@ -100,7 +100,8 @@ public class SaleItemService {
                             info.getImageFile(),
                             "SALE_ITEM",
                             saleItem.getId(),
-                            info.getOrder() != null ? info.getOrder() : 0
+                            info.getOrder() != null ? info.getOrder() : 0,
+                            "SALE_ITEM_IMAGE"
                     );
 
                     file.setDisplayOrder(info.getOrder() != null ? info.getOrder() : 0);
@@ -161,7 +162,7 @@ public class SaleItemService {
 
             // Delete any existing file not in provided list
             existingFiles.stream()
-                    .filter(f -> !providedFileNames.contains(f.getStoredFilename()))
+                    .filter(f -> !providedFileNames.contains(f.getOriginalFilename()))
                     .forEach(f -> fileService.deleteFileById(f.getId()));
 
             // Process new files
@@ -171,16 +172,16 @@ public class SaleItemService {
                         throw new FileUploadException("Each image must be smaller than 2MB.");
                     }
 
-                    FileEntity newFile = fileService.uploadSingleFile( info.getImageFile(), "SALE_ITEM", id,info.getOrder());
+                    FileEntity newFile = fileService.uploadSingleFile( info.getImageFile(), "SALE_ITEM", id,info.getOrder(), "SALE_ITEM_IMAGE");
                     newFilesToStore.add(newFile);
                 }
             }
 
             // Update order for existing images
             for (FileEntity file : existingFiles) {
-                if (providedFileNames.contains(file.getStoredFilename())) {
+                if (providedFileNames.contains(file.getOriginalFilename())) {
                     imageInfos.stream()
-                            .filter(i -> file.getStoredFilename().equals(i.getFileName()))
+                            .filter(i -> file.getOriginalFilename().equals(i.getFileName()))
                             .findFirst()
                             .ifPresent(i -> file.setDisplayOrder(i.getOrder()));
                 }
@@ -189,7 +190,7 @@ public class SaleItemService {
             // Merge existing + new files
             List<FileEntity> updatedFileList = new ArrayList<>();
             updatedFileList.addAll(existingFiles.stream()
-                    .filter(f -> providedFileNames.contains(f.getStoredFilename()))
+                    .filter(f -> providedFileNames.contains(f.getOriginalFilename()))
                     .toList());
             updatedFileList.addAll(newFilesToStore);
 

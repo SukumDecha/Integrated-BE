@@ -1,0 +1,108 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-backend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install OpenVPN
+      run: |
+        sudo apt update
+        sudo apt install -y openvpn openvpn-systemd-resolved
+        
+    - name: Connect to VPN
+      uses: "kota65535/github-openvpn-connect-action@v2"
+      with:
+        config_file: .github/workflows/sitst-client.ovpn
+        username: ${{ secrets.OVPN_USERNAME }}
+        password: ${{ secrets.OVPN_PASSWORD }}
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        
+    - name: Build application
+      run: ./mvnw clean package -DskipTests
+      
+    - name: Build Docker image
+      run: |
+        docker build -t integrated-be:${{ github.sha }} .
+        docker tag integrated-be:${{ github.sha }} integrated-be:latest
+        
+    - name: Save Docker image
+      run: docker save integrated-be:latest | gzip > integrated-be.tar.gz
+      
+    - name: Deploy to VM
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_SSH_KEY }}
+        script: |
+          # Create directory if not exists
+          mkdir -p ~/integrated-be
+          
+          # Stop existing containers
+          cd ~/integrated-be
+          docker-compose down || true
+          
+          # Remove old images
+          docker image prune -f
+          
+    - name: Copy files to VM
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_SSH_KEY }}
+        source: "integrated-be.tar.gz,docker-compose.yml,db/"
+        target: "~/integrated-be/"
+        
+    - name: Deploy on VM
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_SSH_KEY }}
+        script: |
+          cd ~/integrated-be
+          
+          # Load Docker image
+          docker load < integrated-be.tar.gz
+          rm integrated-be.tar.gz
+          
+          # Set environment
+          export SPRING_PROFILES_ACTIVE=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          
+          # Start services
+          docker-compose up -d
+          
+          # Wait for health check
+          sleep 30
+          
+          # Verify deployment
+          docker-compose ps
+          
+          # Clean up old images
+          docker image prune -f

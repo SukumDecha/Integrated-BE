@@ -1,0 +1,46 @@
+Demo GitHub Action to run ssh command with OpenVPN
+
+1. In the repo create a folder .github/workflows
+2. Upload the OpenVPN files sitst-client.opvn and vpn-st_ca.crt to the folder .github/workflows
+2. In the folder create a YAML file with .yml extension
+3. Add the content of the workflow in the file
+
+<Begin example content of the YAML file with .yml extension>
+
+name: GitHub Action
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install OpenVPN
+        run: |
+          sudo apt update
+          sudo apt install -y openvpn openvpn-systemd-resolved
+      - name: Connect to VPN
+        uses: "kota65535/github-openvpn-connect-action@v2"
+        with:
+          config_file: .github/workflows/sitst-client.ovpn
+          username: ${{ secrets.OVPN_USERNAME }}
+          password: ${{ secrets.OVPN_PASSWORD }}
+      - name: Use SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with: 
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: mkdir "$(date +"%d-%m-%Y %H:%M:%S")"
+
+<End>
+
+4. Commit and push the changes
+5. Goto Repo main page and click “Actions” tab
+6. Select the workflow from left sidebar and check the logs and results

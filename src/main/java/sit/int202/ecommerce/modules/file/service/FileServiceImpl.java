@@ -35,7 +35,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public List<FileEntity> uploadMultipleFiles(List<MultipartFile> multipartFiles, String refType, Integer refId) {
+    public List<FileEntity> uploadMultipleFiles(List<MultipartFile> multipartFiles, String refType, Integer refId, String usageType) {
         if (multipartFiles.size() > MAX_FILES) {
             throw new FileUploadException("Maximum " + MAX_FILES + " files are allowed.");
         }
@@ -48,14 +48,14 @@ public class FileServiceImpl implements FileService {
                 throw new FileUploadException("File exceeds 2MB: " + file.getOriginalFilename());
             }
 
-            savedFiles.add(storeFileAndMetadata(file, refType, refId, i));
+            savedFiles.add(storeFileAndMetadata(file, refType, refId, i, usageType));
         }
         return savedFiles;
     }
 
     @Override
-    public FileEntity uploadSingleFile(MultipartFile multipartFile, String refType, Integer refId, Integer order) {
-        return storeFileAndMetadata(multipartFile, refType, refId, order);
+    public FileEntity uploadSingleFile(MultipartFile multipartFile, String refType, Integer refId, Integer order, String usageType) {
+        return storeFileAndMetadata(multipartFile, refType, refId, order, usageType);
     }
 
     @Override
@@ -79,14 +79,14 @@ public class FileServiceImpl implements FileService {
     }
 
     /* ------------------- Helper Methods ------------------- */
-    private FileEntity storeFileAndMetadata(MultipartFile multipartFile, String refType, Integer refId, Integer displayOrder) {
+    private FileEntity storeFileAndMetadata(MultipartFile multipartFile, String refType, Integer refId, Integer displayOrder, String usageType) {
         try {
             String originalFilename = multipartFile.getOriginalFilename();
             String extension = extractFileExtension(originalFilename);
             String storedFilename = UUID.randomUUID() + (extension.isEmpty() ? "" : "." + extension);
 
             String filePath = storageAdapter.storeFile(multipartFile, refType, storedFilename);
-            return createFileEntity(multipartFile, refType, refId, storedFilename, filePath, displayOrder);
+            return createFileEntity(multipartFile, refType, refId, storedFilename, filePath, displayOrder, usageType);
         } catch (IOException e) {
             log.error("Failed to store file: {}", multipartFile.getOriginalFilename(), e);
             throw new FileUploadException("Failed to store file: " + multipartFile.getOriginalFilename());
@@ -94,10 +94,11 @@ public class FileServiceImpl implements FileService {
     }
 
     private FileEntity createFileEntity(MultipartFile multipartFile, String refType, Integer refId,
-                                        String storedFilename, String filePath, Integer displayOrder) {
+                                        String storedFilename, String filePath, Integer displayOrder, String usageType) {
         var fileEntity = new FileEntity();
         fileEntity.setRefType(refType);
         fileEntity.setRefId(refId);
+        fileEntity.setUsageType(usageType);
         fileEntity.setOriginalFilename(multipartFile.getOriginalFilename());
         fileEntity.setStoredFilename(storedFilename);
         fileEntity.setMimeType(multipartFile.getContentType());
