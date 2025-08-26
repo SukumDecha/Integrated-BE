@@ -130,6 +130,20 @@ END IF;
 END IF;
 END//
 
+INSERT INTO
+    brand (
+    name,
+    countryOfOrigin,
+    websiteUrl,
+    isActive
+)
+VALUES (
+           'Xiaomi',
+           'China',
+           'https://www.mi.com',
+           1
+       );
+
 -- Trigger: Trim model, description และ color ก่อน UPDATE
 CREATE TRIGGER trg_saleItem_before_update
     BEFORE UPDATE ON saleItem
@@ -183,6 +197,10 @@ CREATE TABLE user_account (
                               updatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+ALTER TABLE user_account ADD COLUMN refId INT;
+ALTER TABLE user_account
+    ADD CONSTRAINT fk_user_file FOREIGN KEY (refId) REFERENCES file_metadata(id);
+
 INSERT INTO
     brand (
     name,
@@ -208,20 +226,6 @@ VALUES (
            'Apple',
            'United States',
            'https://www.apple.com',
-           1
-       );
-
-INSERT INTO
-    brand (
-    name,
-    countryOfOrigin,
-    websiteUrl,
-    isActive
-)
-VALUES (
-           'Xiaomi',
-           'China',
-           'https://www.mi.com',
            1
        );
 
