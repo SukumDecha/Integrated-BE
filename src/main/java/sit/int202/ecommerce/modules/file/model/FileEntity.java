@@ -27,11 +27,11 @@ public class FileEntity {
 
     @Column(name = "refId", nullable = false)
     private Integer refId;
-//
-//    @Size(max = 50)
-//    @NotNull
-//    @Column(name = "usageType", nullable = false, length = 50)
-//    private String usageType;
+
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "usageType", nullable = false, length = 50)
+    private String usageType;
 
     @Size(max = 255)
     @NotNull

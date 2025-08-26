@@ -132,11 +132,11 @@ END;
 DELIMITER ;
 
 CREATE TABLE IF NOT EXISTS file_metadata (
-                                             id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
 
-                                             refType VARCHAR(50) NOT NULL,
+    refType VARCHAR(50) NOT NULL,
     refId INT NOT NULL,
-
+    usageType VARCHAR(100) NOT NULL,
 
     originalFilename VARCHAR(255) NOT NULL,
     storedFilename VARCHAR(255) NOT NULL UNIQUE,

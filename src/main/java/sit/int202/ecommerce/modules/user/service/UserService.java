@@ -67,8 +67,8 @@ public class UserService {
         repo.save(user);
 
         if (user.getType() == UserAccountType.SELLER) {
-            FileEntity frontFile = fileService.uploadSingleFile(front, "USER_ACCOUNT", user.getId(), 0);
-            FileEntity backFile = fileService.uploadSingleFile(back, "USER_ACCOUNT", user.getId(), 0);
+            FileEntity frontFile = fileService.uploadSingleFile(front, "USER_ACCOUNT", user.getId(), 0, "ID_CARD_FRONT");
+            FileEntity backFile = fileService.uploadSingleFile(back, "USER_ACCOUNT", user.getId(), 0, "ID_CARD_BACK");
 
             user.getIdCardImageFront().add(frontFile);
             user.getIdCardImageBack().add(backFile);

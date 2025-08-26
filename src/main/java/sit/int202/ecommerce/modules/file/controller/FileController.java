@@ -18,14 +18,14 @@ public class FileController {
     private final FileServiceImpl fileService;
 
     // ✅ POST: อัปโหลดหลายไฟล์
-    @PostMapping
-    public ResponseEntity<?> uploadFiles(
-            @RequestParam("files") List<MultipartFile> files,
-            @RequestParam("refType") String refType,
-            @RequestParam("refId") Integer refId
-    ) {
-        return ResponseEntity.ok(fileService.uploadMultipleFiles(files, refType, refId));
-    }
+//    @PostMapping
+//    public ResponseEntity<?> uploadFiles(
+//            @RequestParam("files") List<MultipartFile> files,
+//            @RequestParam("refType") String refType,
+//            @RequestParam("refId") Integer refId
+//    ) {
+//        return ResponseEntity.ok(fileService.uploadMultipleFiles(files, refType, refId));
+//    }
 
     // ✅ DELETE: ลบไฟล์จาก id
     @DeleteMapping("/{fileId}")

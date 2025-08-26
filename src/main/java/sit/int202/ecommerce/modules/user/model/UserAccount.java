@@ -72,9 +72,10 @@ public class UserAccount {
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "refId",              // column in file_metadata
-            referencedColumnName = "id", // column in saleItem
+            referencedColumnName = "id", // column in userAccount
             insertable = false,
-            updatable = false
+            updatable = false,
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
     @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageFront'")
     private List<FileEntity> idCardImageFront;
@@ -82,9 +83,10 @@ public class UserAccount {
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "refId",              // column in file_metadata
-            referencedColumnName = "id", // column in saleItem
+            referencedColumnName = "id", // column in userAccount
             insertable = false,
-            updatable = false
+            updatable = false,
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
     @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageBack'")
     private List<FileEntity> idCardImageBack;
