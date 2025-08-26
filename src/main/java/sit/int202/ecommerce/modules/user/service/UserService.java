@@ -46,7 +46,7 @@ public class UserService {
         if (repo.existsByEmail(req.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used");
         }
-        if (repo.existsByNickname(req.getNickname())) {
+        if (repo.existsByNickname(req.getNickName())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Nickname already used");
         }
 
@@ -61,17 +61,17 @@ public class UserService {
             user.setMobileNumber(req.getMobileNumber());
             user.setBankAccountNumber(req.getBankAccountNumber());
             user.setBankName(req.getBankName());
-            user.setNationalId(req.getNationalIdNumber());
+            user.setIdCardNumber(req.getIdCardNumber());
         }
 
         repo.save(user);
 
         if (user.getType() == UserAccountType.SELLER) {
-            FileEntity frontFile = fileService.uploadSingleFile(front, "nid", user.getId(), 0);
-            FileEntity backFile = fileService.uploadSingleFile(back, "nid", user.getId(), 0);
+            FileEntity frontFile = fileService.uploadSingleFile(front, "USER_ACCOUNT", user.getId(), 0);
+            FileEntity backFile = fileService.uploadSingleFile(back, "USER_ACCOUNT", user.getId(), 0);
 
-            user.setNationalIdFrontImage(frontFile);
-            user.setNationalIdBackImage(backFile);
+            user.setIdCardImageFront(frontFile);
+            user.setIdCardImageBack(backFile);
         }
 
         String token = jwtUtils.generateToken(user.getEmail());
