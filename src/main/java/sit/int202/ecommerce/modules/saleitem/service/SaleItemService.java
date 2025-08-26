@@ -156,10 +156,12 @@ public class SaleItemService {
             // Collect fileNames of existing images to keep
             for (SaleItemImageRequest info : imageInfos) {
                 if (info.getFileName() != null) {
+                    System.out.println("File Name: " + info.getFileName());
                     providedFileNames.add(info.getFileName());
                 }
             }
 
+            existingFiles.stream().forEach(fileEntity -> System.out.println("Existed FIle Name: " + fileEntity.getOriginalFilename()));
             // Delete any existing file not in provided list
             existingFiles.stream()
                     .filter(f -> !providedFileNames.contains(f.getOriginalFilename()))

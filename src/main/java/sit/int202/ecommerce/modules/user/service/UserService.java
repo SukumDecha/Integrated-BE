@@ -46,7 +46,7 @@ public class UserService {
         if (repo.existsByEmail(req.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used");
         }
-        if (repo.existsByNickname(req.getNickName())) {
+        if (repo.existsByNickname(req.getNickname())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Nickname already used");
         }
 
