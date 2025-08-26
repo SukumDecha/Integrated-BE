@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.JoinFormula;
 import org.hibernate.annotations.Where;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
 
@@ -64,13 +65,11 @@ public class UserAccount {
     private String idCardNumber;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "refId", referencedColumnName = "id", insertable = false, updatable = false)
-    @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageFront'")
+    @JoinFormula("(SELECT fm.id FROM file_metadata fm WHERE fm.refType = 'USER_ACCOUNT' AND fm.refId = id AND fm.usageType = 'idCardImageFront' LIMIT 1)")
     private FileEntity idCardImageFront;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "refId", referencedColumnName = "id", insertable = false, updatable = false)
-    @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageBack'")
+    @JoinFormula("(SELECT fm.id FROM file_metadata fm WHERE fm.refType = 'USER_ACCOUNT' AND fm.refId = id AND fm.usageType = 'idCardImageBack' LIMIT 1)")
     private FileEntity idCardImageBack;
 
     @Column(nullable = false)
