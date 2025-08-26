@@ -8,12 +8,13 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "file_metadata")
-public class File {
+public class FileEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -24,10 +25,9 @@ public class File {
     @Column(name = "refType", nullable = false, length = 50)
     private String refType;
 
-    @NotNull
     @Column(name = "refId", nullable = false)
     private Integer refId;
-
+//
 //    @Size(max = 50)
 //    @NotNull
 //    @Column(name = "usageType", nullable = false, length = 50)
@@ -63,7 +63,7 @@ public class File {
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "createdOn")
-    private Instant createdOn;
+    private LocalDateTime createdOn;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updatedOn")

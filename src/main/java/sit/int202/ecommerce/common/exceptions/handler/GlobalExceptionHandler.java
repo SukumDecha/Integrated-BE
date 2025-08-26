@@ -7,10 +7,12 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.common.dto.ErrorResponse;
 import sit.int202.ecommerce.common.exceptions.BrandHasSaleItemsException;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
@@ -19,10 +21,9 @@ import sit.int202.ecommerce.common.exceptions.FileUploadException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(EntityNotFoundException.class)
+    @ExceptionHandler({ ResponseStatusException.class, EntityNotFoundException.class} )
     public ResponseEntity<ErrorResponse> entityExceptions(
             RuntimeException ex, HttpServletRequest request) {
-        HttpStatus status;
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.NOT_FOUND.value())
@@ -92,6 +93,18 @@ public class GlobalExceptionHandler {
             FileUploadException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
+                .errorMessage(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(error.getStatus()).body(error);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupportedException(
+            HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.builder()
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value())
                 .errorMessage(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();

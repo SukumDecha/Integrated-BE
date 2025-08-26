@@ -36,7 +36,7 @@ public class SaleItemUpdateRequest {
 
     private List<SaleItemImageRequest> imageInfos;
 
-    public void normalize() {
+    public void setModel(String model) {
         if (model != null) {
             model = model.trim();
 
@@ -44,6 +44,11 @@ public class SaleItemUpdateRequest {
                 model = null;
             }
         }
+
+        this.model = model;
+    }
+
+    public void setDescription(String description) {
         if (description != null) {
             description = description.trim();
 
@@ -51,6 +56,11 @@ public class SaleItemUpdateRequest {
                 description = null;
             }
         }
+
+        this.description = description;
+    }
+
+    public void setColor(String color) {
         if (color != null) {
             color = color.trim();
 
@@ -58,8 +68,7 @@ public class SaleItemUpdateRequest {
                 color = null;
             }
         }
-//        if (quantity == null || quantity < 1) {
-//            quantity = 1;
-//        }
+
+        this.color = color;
     }
 }

@@ -19,11 +19,12 @@ import sit.int202.ecommerce.modules.brand.dto.response.BrandResponse;
 import sit.int202.ecommerce.modules.brand.mapper.BrandMapper;
 import sit.int202.ecommerce.modules.brand.model.Brand;
 import sit.int202.ecommerce.modules.brand.service.BrandService;
-import sit.int202.ecommerce.modules.file.model.File;
+import sit.int202.ecommerce.modules.file.model.FileEntity;
 import sit.int202.ecommerce.modules.file.repository.FileRepository;
-import sit.int202.ecommerce.modules.file.service.FileService;
+import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemImageRequest;
+import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryResponse;
@@ -32,7 +33,6 @@ import sit.int202.ecommerce.modules.saleitem.mapper.SaleItemMapper;
 import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,7 +44,7 @@ public class SaleItemService {
     private final BrandService brandService;
     private final SaleItemMapper saleItemMapper;
     private final BrandMapper brandMapper;
-    private final FileService fileService;
+    private final FileServiceImpl fileService;
     private final FileRepository fileRepository;
     private final EntityManager em;
 
@@ -71,52 +71,45 @@ public class SaleItemService {
 
     @Transactional
     public SaleItemDetailResponse createSaleItem(SaleItemCreateRequest item) {
-        item.normalize();
-
         BrandResponse brandDTO = brandService.getBrandById(item.getBrand().getId());
         Brand brand = brandMapper.toEntity(brandDTO);
 
         SaleItem tempSaleItem = saleItemMapper.toEntity(item);
         tempSaleItem.setBrand(brand);
+
         SaleItem saleItem = saleItemRepository.save(tempSaleItem);
 
-        try {
-            List<SaleItemImageRequest> imageInfos = item.getImageInfos();
-            List<File> uploadedFiles = new ArrayList<>();
+        List<SaleItemImageRequest> imageInfos = item.getImageInfos();
+        List<FileEntity> uploadedFiles = new ArrayList<>();
 
-            if (imageInfos != null) {
-                long newImageCount = imageInfos.size();
+        if (imageInfos != null) {
+            long newImageCount = imageInfos.size();
 
-                if (newImageCount > 4) {
-                    throw new FileUploadException("You can upload up to 4 images only.");
-                }
+            if (newImageCount > 4) {
+                throw new FileUploadException("You can upload up to 4 images only.");
+            }
 
-                for (SaleItemImageRequest info : imageInfos) {
-                    if (info.getImageFile() != null) {
-                        if (info.getImageFile().getSize() > 2 * 1024 * 1024) {
-                            throw new FileUploadException("Each image must be smaller than 2MB.");
-                        }
-
-                        File file = fileService.saveFile(
-                                info.getImageFile(),
-                                "SALE_ITEM",
-                                saleItem.getId(),
-                                info.getOrder() != null ? info.getOrder() : 0
-                        );
-
-                        file.setDisplayOrder(info.getOrder() != null ? info.getOrder() : 0);
-                        uploadedFiles.add(file);
+            for (SaleItemImageRequest info : imageInfos) {
+                if (info.getImageFile() != null) {
+                    if (info.getImageFile().getSize() > 2 * 1024 * 1024) {
+                        throw new FileUploadException("Each image must be smaller than 2MB.");
                     }
-                }
 
-                if (!uploadedFiles.isEmpty()) {
-                    fileRepository.saveAll(uploadedFiles);
-                    em.refresh(saleItem);
+                    FileEntity file = fileService.uploadSingleFile(
+                            info.getImageFile(),
+                            "SALE_ITEM",
+                            saleItem.getId(),
+                            info.getOrder() != null ? info.getOrder() : 0
+                    );
+
+                    file.setDisplayOrder(info.getOrder() != null ? info.getOrder() : 0);
+                    uploadedFiles.add(file);
                 }
             }
 
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload image(s)", e);
+            if (!uploadedFiles.isEmpty()) {
+                fileRepository.saveAll(uploadedFiles);
+            }
         }
 
         em.refresh(saleItem);
@@ -125,8 +118,6 @@ public class SaleItemService {
 
     @Transactional
     public SaleItemDetailResponse updateSaleItem(Integer id, SaleItemUpdateRequest item) {
-        item.normalize();
-
         SaleItem existing = saleItemRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("SaleItem not found with id :: " + id));
 
@@ -146,16 +137,13 @@ public class SaleItemService {
         List<SaleItemImageRequest> imageInfos = Optional.ofNullable(item.getImageInfos())
                 .orElse(new ArrayList<>());
 
-        System.out.println("Total Image Info" + item.getImageInfos().size());
-        System.out.println("Image Info: " +  item.getImageInfos());
-
-        List<File> existingFiles = fileService.getFilesByRef("SALE_ITEM", id);
-        List<File> newFilesToStore = new ArrayList<>();
+        List<FileEntity> existingFiles = fileService.getFilesByReference("SALE_ITEM", id);
+        List<FileEntity> newFilesToStore = new ArrayList<>();
         Set<String> providedFileNames = new HashSet<>();
 
         if (imageInfos == null || imageInfos.isEmpty()) {
             // Remove all images
-            existingFiles.forEach(f -> fileService.deleteFile(f.getId()));
+            existingFiles.forEach(f -> fileService.deleteFileById(f.getId()));
             existing.setFiles(new ArrayList<>());
             System.out.println("Removed all files");
         } else {
@@ -173,7 +161,7 @@ public class SaleItemService {
             // Delete any existing file not in provided list
             existingFiles.stream()
                     .filter(f -> !providedFileNames.contains(f.getStoredFilename()))
-                    .forEach(f -> fileService.deleteFile(f.getId()));
+                    .forEach(f -> fileService.deleteFileById(f.getId()));
 
             // Process new files
             for (SaleItemImageRequest info : imageInfos) {
@@ -181,17 +169,14 @@ public class SaleItemService {
                     if (info.getImageFile().getSize() > 2 * 1024 * 1024) {
                         throw new FileUploadException("Each image must be smaller than 2MB.");
                     }
-                    try {
-                        File newFile = fileService.saveFile( info.getImageFile(), "SALE_ITEM", id,info.getOrder());
-                        newFilesToStore.add(newFile);
-                    } catch (IOException e) {
-                        throw new FileUploadException("Failed to store new image: " + e.getMessage());
-                    }
+
+                    FileEntity newFile = fileService.uploadSingleFile( info.getImageFile(), "SALE_ITEM", id,info.getOrder());
+                    newFilesToStore.add(newFile);
                 }
             }
 
             // Update order for existing images
-            for (File file : existingFiles) {
+            for (FileEntity file : existingFiles) {
                 if (providedFileNames.contains(file.getStoredFilename())) {
                     imageInfos.stream()
                             .filter(i -> file.getStoredFilename().equals(i.getFileName()))
@@ -201,14 +186,14 @@ public class SaleItemService {
             }
 
             // Merge existing + new files
-            List<File> updatedFileList = new ArrayList<>();
+            List<FileEntity> updatedFileList = new ArrayList<>();
             updatedFileList.addAll(existingFiles.stream()
                     .filter(f -> providedFileNames.contains(f.getStoredFilename()))
                     .toList());
             updatedFileList.addAll(newFilesToStore);
 
             existing.setFiles(updatedFileList.stream()
-                    .sorted(Comparator.comparing(File::getDisplayOrder))
+                    .sorted(Comparator.comparing(FileEntity::getDisplayOrder))
                     .collect(Collectors.toList()));
         }
 
@@ -221,84 +206,26 @@ public class SaleItemService {
             throw new EntityNotFoundException("Sale item with ID " + id + " not found");
         }
 
-        List<File> files = fileService.getFilesByRef("SALE_ITEM", id);
+        List<FileEntity> files = fileService.getFilesByReference("SALE_ITEM", id);
 
-        for (File file : files) {
-            fileService.deleteFile(file.getId());
+        for (FileEntity file : files) {
+            fileService.deleteFileById(file.getId());
         }
 
         saleItemRepository.deleteById(id);
     }
 
-    public PaginateResponse<SaleItemDetailResponse> getSaleItems(
-            int page,
-            int size,
-            String sortField,
-            String sortDirection,
-            List<String> filterBrands,
-            List<Integer> filterStorages,
-            Integer filterPriceLower,
-            Integer filterPriceUpper
-    ) {
-        List<Sort.Order> sorts = new ArrayList<>();
-        if (sortField != null && !sortField.isBlank()) {
-            sorts.add(new Sort.Order(Sort.Direction.fromString(sortDirection), sortField));
-        }
-
-        sorts.add(Sort.Order.asc("createdOn"));
-        sorts.add(Sort.Order.asc("id"));
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sorts));
-
-        boolean hasBrand = filterBrands != null && !filterBrands.isEmpty();
-        boolean hasStorage = filterStorages != null && !filterStorages.isEmpty();
-        boolean hasLowerOnly = filterPriceLower != null && filterPriceUpper == null;
-        boolean hasRange = filterPriceLower != null && filterPriceUpper != null;
-
-        // ถ้ามีเงื่อนไขใด ๆ ให้ใช้ Specification แล้ว return ทันที (ไม่ไปเข้าบล็อกเดิมข้างล่าง)
-        if (hasBrand || hasStorage || hasLowerOnly || hasRange) {
-            Specification<SaleItem> spec = Specification.where(null);
-
-            if (hasBrand) {
-                spec = spec.and((root, q, cb) -> root.get("brand").get("name").in(filterBrands));
-            }
-
-            if (hasStorage) {
-                boolean includeNull = filterStorages.contains(-1);
-                List<Integer> normalStorages = filterStorages.stream()
-                        .filter(v -> v != null && v != -1)
-                        .toList();
-
-                Specification<SaleItem> storageSpec = null;
-                if (!normalStorages.isEmpty()) {
-                    storageSpec = (root, q, cb) -> root.get("storageGb").in(normalStorages);
-                }
-                if (includeNull) {
-                    Specification<SaleItem> nullSpec = (root, q, cb) -> cb.isNull(root.get("storageGb"));
-                    storageSpec = (storageSpec == null) ? nullSpec : storageSpec.or(nullSpec);
-                }
-                if (storageSpec != null) {
-                    spec = spec.and(storageSpec);
-                }
-            }
-
-            // ราคา: lower เท่านั้น = exact, lower+upper = between [lower, upper]
-            if (hasLowerOnly) {
-                spec = spec.and((root, q, cb) -> cb.equal(root.get("price"), filterPriceLower));
-            } else if (hasRange) {
-                spec = spec.and((root, q, cb) -> cb.between(root.get("price"), filterPriceLower, filterPriceUpper));
-            }
-            // (upper อย่างเดียว -> ไม่ใช้ราคา)
-
-            Page<SaleItem> specResult = saleItemRepository.findAll(spec, pageable);
-            Page<SaleItemDetailResponse> dtoPageSpec = specResult.map(saleItemMapper::toDetailResponse);
-            return PaginationUtils.toPaginateResponse(dtoPageSpec);
-        }
-
+    @Transactional
+    public PaginateResponse<SaleItemDetailResponse> getSaleItems(SaleItemPaginationRequest request) {
+        Pageable pageable = buildPageable(request);
+        Specification<SaleItem> spec = buildSpecification(request);
 
         Page<SaleItem> saleItems;
-        if (filterBrands != null && !filterBrands.isEmpty()) {
-            saleItems = saleItemRepository.findByBrand_NameIn(filterBrands, pageable);
+
+        if (spec != null) {
+            saleItems = saleItemRepository.findAll(spec, pageable);
+        } else if (request.getFilterBrands() != null && !request.getFilterBrands().isEmpty()) {
+            saleItems = saleItemRepository.findByBrand_NameIn(request.getFilterBrands(), pageable);
         } else {
             saleItems = saleItemRepository.findAll(pageable);
         }
@@ -333,4 +260,79 @@ public class SaleItemService {
 
         return storageSizes;
     }
+
+    private Pageable buildPageable(SaleItemPaginationRequest request) {
+        List<Sort.Order> orders = new ArrayList<>();
+
+        if (request.getSortBy() != null && !request.getSortBy().isBlank()) {
+            orders.add(new Sort.Order(
+                    Sort.Direction.fromString(request.getSortDirection()),
+                    request.getSortBy()
+            ));
+        }
+
+        orders.add(Sort.Order.asc("createdOn"));
+        orders.add(Sort.Order.asc("id"));
+
+        return PageRequest.of(request.getPage(), request.getSize(), Sort.by(orders));
+    }
+
+    private Specification<SaleItem> buildSpecification(SaleItemPaginationRequest request) {
+        Specification<SaleItem> spec = Specification.where(null);
+
+        boolean hasBrand = request.getFilterBrands() != null && !request.getFilterBrands().isEmpty();
+        boolean hasStorage = request.getFilterStorages() != null && !request.getFilterStorages().isEmpty();
+        boolean hasLowerOnly = request.getFilterPriceLower() != null && request.getFilterPriceUpper() == null;
+        boolean hasRange = request.getFilterPriceLower() != null && request.getFilterPriceUpper() != null;
+        boolean hasKeyword = request.getFilterSearch() != null && !request.getFilterSearch() .trim().isEmpty();
+
+
+        if (!hasBrand && !hasStorage && !hasLowerOnly && !hasRange && !hasKeyword) {
+            return null; // no filters → no spec
+        }
+
+        if (hasKeyword) {
+            String normalized = request.getFilterSearch()
+                    .replaceAll("[^\\p{L}\\p{Nd}]", "") // ลบอักขระพิเศษทั้งหมด
+                    .replaceAll("\\s+", " ");               // ลดช่องว่างซ้ำซ้อนให้เหลือ 1 ช่อง
+            String keyword = "%" + normalized.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> cb.or(
+                    cb.like(cb.lower(cb.function("REPLACE", String.class, root.get("model"), cb.literal(" "), cb.literal(""))), keyword),
+                    cb.like(cb.lower(cb.function("REPLACE", String.class, root.get("description"), cb.literal(" "), cb.literal(""))), keyword),
+                    cb.like(cb.lower(cb.function("REPLACE", String.class, root.get("color"), cb.literal(" "), cb.literal(""))), keyword)
+            ));
+        }
+
+        if (hasBrand) {
+            spec = spec.and((root, q, cb) -> root.get("brand").get("name").in(request.getFilterBrands()));
+        }
+
+        if (hasStorage) {
+            boolean includeNull = request.getFilterStorages().contains(-1);
+            List<Integer> normalStorages = request.getFilterStorages().stream()
+                    .filter(v -> v != null && v != -1)
+                    .toList();
+
+            Specification<SaleItem> storageSpec = null;
+            if (!normalStorages.isEmpty()) {
+                storageSpec = (root, q, cb) -> root.get("storageGb").in(normalStorages);
+            }
+            if (includeNull) {
+                Specification<SaleItem> nullSpec = (root, q, cb) -> cb.isNull(root.get("storageGb"));
+                storageSpec = (storageSpec == null) ? nullSpec : storageSpec.or(nullSpec);
+            }
+            if (storageSpec != null) {
+                spec = spec.and(storageSpec);
+            }
+        }
+
+        if (hasLowerOnly) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("price"), request.getFilterPriceLower()));
+        } else if (hasRange) {
+            spec = spec.and((root, q, cb) -> cb.between(root.get("price"), request.getFilterPriceLower(), request.getFilterPriceUpper()));
+        }
+
+        return spec;
+    }
+
 }

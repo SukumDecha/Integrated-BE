@@ -4,6 +4,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+uploads
+
 !db
 docker-compose.yml
 

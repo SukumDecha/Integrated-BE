@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3308/ecommerce?useSSL=true&serverTimezone=Asia/Bangkok
+    url: jdbc:mysql://localhost:3306/ecommerce?useSSL=true&serverTimezone=Asia/Bangkok
     username: root
-    password: rootpass
+    password: seafood.09
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -16,6 +16,7 @@ app:
   cors:
     enabled: true
     allowed-origin: http://localhost:5173
-
   file:
     upload-dir: ${user.dir}/uploads
+  frontend-url: http://localhost:5173
+  backend-url: http://localhost:8080

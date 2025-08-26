@@ -10,7 +10,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.Where;
 import sit.int202.ecommerce.modules.brand.model.Brand;
-import sit.int202.ecommerce.modules.file.model.File;
+import sit.int202.ecommerce.modules.file.model.FileEntity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -38,7 +38,6 @@ public class SaleItem {
     private String model;
 
     @NotNull
-    @Lob
     @Column(name = "description", nullable = false,  columnDefinition = "TEXT")
     private String description;
 
@@ -80,5 +79,5 @@ public class SaleItem {
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "refId", referencedColumnName = "id", insertable = false, updatable = false)
     @Where(clause = "refType = 'SALE_ITEM' AND usageType = 'GALLERY'")
-    private List<File> files;
+    private List<FileEntity> files;
 }

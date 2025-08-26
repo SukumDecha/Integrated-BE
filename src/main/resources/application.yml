@@ -4,6 +4,22 @@ spring:
   jackson:
     time-zone: Asia/Bangkok
     date-format: yyyy-MM-dd HH:mm:ss
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 20MB
+      max-request-size: 20MB
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: sukumdecha02@gmail.com
+    password: rcdr abmc wrhd czrq
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 springdoc:
   swagger-ui:
     path: /v1/api-docs
@@ -12,3 +28,8 @@ server:
   servlet:
     encoding:
       charset: UTF-8
+app:
+  organizer-email: SSA-01
+  jwt:
+    secret: your-256-bit-secret-your-256-bit-secret
+    expiration-ms: 3600000 # 1 hour in milliseconds
