@@ -8,6 +8,7 @@ import org.hibernate.annotations.Where;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -78,7 +79,7 @@ public class UserAccount {
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
     @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageFront'")
-    private List<FileEntity> idCardImageFront;
+    private List<FileEntity> idCardImageFront = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(
@@ -89,7 +90,7 @@ public class UserAccount {
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
     @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageBack'")
-    private List<FileEntity> idCardImageBack;
+    private List<FileEntity> idCardImageBack = new ArrayList<>();
 
     @Column(nullable = false)
     private boolean isActive = false;

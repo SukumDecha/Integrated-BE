@@ -18,7 +18,24 @@ public class UserMapper {
     }
 
     public UserAccount toEntity(UserRegisterRequest request) {
-        return modelMapper.map(request, UserAccount.class);
-    }
+        UserAccount user = new UserAccount();
 
+        // แปลง field ทีละตัวเพื่อหลีกเลี่ยงปัญหาการแปลงแบบอัตโนมัติ
+        user.setType(request.getUserType());
+        user.setNickname(request.getNickname());
+        user.setEmail(request.getEmail());
+        user.setFullname(request.getFullname());
+        user.setPassword(request.getPassword());
+
+        // Field สำหรับ Seller (อาจเป็น null สำหรับ user ที่ไม่ใช่ seller)
+        user.setMobileNumber(request.getMobileNumber());
+        user.setBankAccountNumber(request.getBankAccountNumber());
+        user.setBankName(request.getBankName());
+        user.setIdCardNumber(request.getIdCardNumber()); // String ไป String - ไม่มีการแปลง
+
+        // ตั้งค่าเริ่มต้น
+        user.setActive(false);
+
+        return user;
+    }
 }

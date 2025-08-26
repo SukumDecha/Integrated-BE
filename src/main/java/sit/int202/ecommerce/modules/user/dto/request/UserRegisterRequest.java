@@ -29,7 +29,7 @@ public class UserRegisterRequest {
     @NotBlank
     @Size(min = 4, max = 40)
     @Schema(description = "Full name of the user", example = "John Doe")
-    private String fullName;
+    private String fullname;
 
     @NotBlank
     @PasswordPolicy
