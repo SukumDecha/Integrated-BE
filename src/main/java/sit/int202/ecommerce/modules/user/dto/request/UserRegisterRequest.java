@@ -19,7 +19,7 @@ public class UserRegisterRequest {
 
     @NotBlank
     @Schema(description = "User nickname", example = "johnny")
-    private String nickname;
+    private String nickName;
 
     @NotBlank
     @Email
@@ -47,5 +47,5 @@ public class UserRegisterRequest {
     private String bankName;
 
     @Schema(description = "National ID number of seller (required if userType is SELLER)", example = "1234567890123")
-    private String nationalIdNumber;
+    private String idCardNumber;
 }
