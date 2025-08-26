@@ -12,7 +12,7 @@ import sit.int202.ecommerce.modules.file.model.FileEntity;
 @AllArgsConstructor
 public class FileResponse {
     private String fileName;
-
+    private String originalFilename;
     private String imageUrl;
     private Integer imageViewOrder;
     private String url;
@@ -20,6 +20,7 @@ public class FileResponse {
 
     public FileResponse(FileEntity file) {
         this.fileName = file.getStoredFilename();
+        this.originalFilename = file.getOriginalFilename();
         this.imageViewOrder = file.getDisplayOrder();
         this.imageUrl = "/uploads/" +
                 file.getRefType() +

@@ -2,8 +2,10 @@ package sit.int202.ecommerce.modules.saleitem.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,66 +36,24 @@ public class SaleItemV2Controller {
         return saleItemService.getSaleItems(request);
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Create sale item with image files (multipart/form-data)")
+    @PostMapping()
+    @Operation(summary = "Create sale item with image files")
     @ApiResponse(responseCode = "201", description = "Sale item created")
     @ApiResponse(responseCode = "500", description = "Sale item create failed")
-    public ResponseEntity<SaleItemDetailResponse> createSaleItemMultipart(
-            @RequestPart("saleItem") String saleItemJson,
-            @RequestPart(value = "imageInfos", required = false) List<MultipartFile> imageFiles
-    ) {
-        try {
-            // 🔍 LOG JSON ที่ถูกส่งมา
-            System.out.println("[DEBUG] Raw JSON from client: " + saleItemJson);
-
-            SaleItemCreateRequest saleItem = objectMapper.readValue(saleItemJson, SaleItemCreateRequest.class);
-
-            System.out.println("[DEBUG] Parsed imageInfos: " + saleItem.getImageInfos());
-
-            if (saleItem.getImageInfos() != null && imageFiles != null) {
-                for (int i = 0; i < imageFiles.size(); i++) {
-                    if (i < saleItem.getImageInfos().size()) {
-                        saleItem.getImageInfos().get(i).setImageFile(imageFiles.get(i));
-                        System.out.println("[DEBUG] Attached image: " + imageFiles.get(i).getOriginalFilename());
-                    }
-                }
-            }
-
-            var created = saleItemService.createSaleItem(saleItem);
-            return ResponseEntity.status(201).body(created);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Sale item create failed", e);
-        }
+    public ResponseEntity<SaleItemDetailResponse> createSaleItem(@Valid @ModelAttribute SaleItemCreateRequest request) {
+        var saleItem = saleItemService.createSaleItem(request);
+        return ResponseEntity.status(201).body(saleItem);
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Update sale item with image files (multipart/form-data)")
+    @PutMapping(value = "/{id}")
+    @Operation(summary = "Update sale item with image files")
     @ApiResponse(responseCode = "200", description = "Sale item updated")
     @ApiResponse(responseCode = "500", description = "Sale item update failed")
-    public ResponseEntity<SaleItemDetailResponse> updateSaleItemMultipart(
-            @PathVariable Integer id,
-            @RequestPart("saleItem") String saleItemJson,
-            @RequestPart(value = "imageInfos", required = false) List<MultipartFile> imageFiles
-    ) {
-        try {
-            SaleItemUpdateRequest saleItem = objectMapper.readValue(saleItemJson, SaleItemUpdateRequest.class);
-
-            if (saleItem.getImageInfos() != null && imageFiles != null) {
-                for (int i = 0; i < imageFiles.size(); i++) {
-                    if (i < saleItem.getImageInfos().size()) {
-                        saleItem.getImageInfos().get(i).setImageFile(imageFiles.get(i));
-                    }
-                }
-            }
-
-            var updated = saleItemService.updateSaleItem(id, saleItem);
-            return ResponseEntity.ok(updated);
-
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Sale item update failed", e);
-        }
+    public ResponseEntity<SaleItemDetailResponse> updateSaleItem(
+            @Parameter(description = "ID of the sale item to be updated", required = true) @PathVariable Integer id,
+            @ModelAttribute @Valid SaleItemUpdateRequest request) {
+        var saleItem = saleItemService.updateSaleItem(id, request);
+        return ResponseEntity.ok(saleItem);
     }
 
     @DeleteMapping("/{id}")
