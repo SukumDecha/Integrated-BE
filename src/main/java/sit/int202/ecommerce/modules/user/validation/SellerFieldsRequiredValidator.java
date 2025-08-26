@@ -29,8 +29,8 @@ public class SellerFieldsRequiredValidator implements ConstraintValidator<Seller
                 addViolation(context, "bankName");
                 valid = false;
             }
-            if (isBlank(request.getNationalIdNumber())) {
-                addViolation(context, "nationalIdNumber");
+            if (isBlank(request.getIdCardNumber())) {
+                addViolation(context, "idCardNumber");
                 valid = false;
             }
 
