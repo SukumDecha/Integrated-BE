@@ -70,8 +70,8 @@ public class UserService {
             FileEntity frontFile = fileService.uploadSingleFile(front, "USER_ACCOUNT", user.getId(), 0);
             FileEntity backFile = fileService.uploadSingleFile(back, "USER_ACCOUNT", user.getId(), 0);
 
-            user.setIdCardImageFront(frontFile);
-            user.setIdCardImageBack(backFile);
+            user.getIdCardImageFront().add(frontFile);
+            user.getIdCardImageBack().add(backFile);
         }
 
         String token = jwtUtils.generateToken(user.getEmail());

@@ -4,11 +4,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.hibernate.annotations.JoinFormula;
 import org.hibernate.annotations.Where;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
 
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -64,13 +64,30 @@ public class UserAccount {
     @Column(name = "idCardNumber", length = 20)
     private String idCardNumber;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinFormula("(SELECT fm.id FROM file_metadata fm WHERE fm.refType = 'USER_ACCOUNT' AND fm.refId = id AND fm.usageType = 'idCardImageFront' LIMIT 1)")
-    private FileEntity idCardImageFront;
+//    @OneToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "refId", referencedColumnName = "id", insertable = false, updatable = false)
+//    @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageFront'")
+//    private FileEntity idCardImageFront;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinFormula("(SELECT fm.id FROM file_metadata fm WHERE fm.refType = 'USER_ACCOUNT' AND fm.refId = id AND fm.usageType = 'idCardImageBack' LIMIT 1)")
-    private FileEntity idCardImageBack;
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "refId",              // column in file_metadata
+            referencedColumnName = "id", // column in saleItem
+            insertable = false,
+            updatable = false
+    )
+    @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageFront'")
+    private List<FileEntity> idCardImageFront;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "refId",              // column in file_metadata
+            referencedColumnName = "id", // column in saleItem
+            insertable = false,
+            updatable = false
+    )
+    @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageBack'")
+    private List<FileEntity> idCardImageBack;
 
     @Column(nullable = false)
     private boolean isActive = false;
