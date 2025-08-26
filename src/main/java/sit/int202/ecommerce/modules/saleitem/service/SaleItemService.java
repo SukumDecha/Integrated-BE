@@ -2,6 +2,7 @@ package sit.int202.ecommerce.modules.saleitem.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -293,14 +294,32 @@ public class SaleItemService {
 
         if (hasKeyword) {
             String normalized = request.getFilterSearch()
-                    .replaceAll("[^\\p{L}\\p{Nd}]", "") // ลบอักขระพิเศษทั้งหมด
-                    .replaceAll("\\s+", " ");               // ลดช่องว่างซ้ำซ้อนให้เหลือ 1 ช่อง
-            String keyword = "%" + normalized.toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(cb.function("REPLACE", String.class, root.get("model"), cb.literal(" "), cb.literal(""))), keyword),
-                    cb.like(cb.lower(cb.function("REPLACE", String.class, root.get("description"), cb.literal(" "), cb.literal(""))), keyword),
-                    cb.like(cb.lower(cb.function("REPLACE", String.class, root.get("color"), cb.literal(" "), cb.literal(""))), keyword)
-            ));
+                    .trim()
+                    .replaceAll("[^\\p{L}\\p{Nd}\\s]", "") // keep only letters, numbers, spaces
+                    .replaceAll("\\s+", " ");
+
+            String[] tokens = normalized.toLowerCase().split(" ");
+
+            spec = spec.and((root, query, cb) -> {
+                List<Predicate> andPredicates = new ArrayList<>();
+
+                for (String token : tokens) {
+                    String kw = "%" + token + "%";
+
+                    // token must appear in at least one field
+                    Predicate perToken = cb.or(
+                            cb.like(cb.lower(root.get("model")), kw),
+                            cb.like(cb.lower(root.get("description")), kw),
+                            cb.like(cb.lower(root.get("color")), kw)
+                    );
+
+                    // add to AND group
+                    andPredicates.add(perToken);
+                }
+
+                // require all tokens to match
+                return cb.and(andPredicates.toArray(new Predicate[0]));
+            });
         }
 
         if (hasBrand) {
