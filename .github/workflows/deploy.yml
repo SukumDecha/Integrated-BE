@@ -96,6 +96,10 @@ jobs:
           # export SPRING_PROFILES_ACTIVE=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
           export SPRING_PROFILES_ACTIVE=uat
           
+          # Create network and volumes if they don't exist
+          docker network create integrated-network || true
+          docker volume create backend_uploads || true
+          
           # Start only backend services (mysql + backend)
           docker-compose up -d mysql backend
           
