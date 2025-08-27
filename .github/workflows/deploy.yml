@@ -2,19 +2,42 @@ name: Deploy Backend
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main, uat, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, uat, dev ]
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-backend
 
 jobs:
-  build-and-deploy:
+  build-and-test:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
-    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-m2-
+
+    - name: Build application JAR
+      run: ./mvnw clean package -DskipTests
+
+  build-and-deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/uat'
+
     steps:
     - uses: actions/checkout@v4
     
@@ -29,25 +52,23 @@ jobs:
         config_file: .github/workflows/sitst-client.ovpn
         username: ${{ secrets.OVPN_USERNAME }}
         password: ${{ secrets.OVPN_PASSWORD }}
-    
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        
-    - name: Cache Maven packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        
-    - name: Build application
-      run: ./mvnw clean package -DskipTests
       
     - name: Build Docker image
       run: |
-        docker build -t integrated-be:${{ github.sha }} .
+        # Decide environment
+        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          PROFILE=prod
+        elif [ "${{ github.ref }}" = "refs/heads/uat" ]; then
+          PROFILE=uat
+        else
+          PROFILE=dev
+        fi
+
+        echo "Building with profile: $PROFILE"
+
+        docker build \
+          --build-arg SPRING_PROFILES_ACTIVE=$PROFILE \
+          -t integrated-be:${{ github.sha }} .
         docker tag integrated-be:${{ github.sha }} integrated-be:latest
         
     - name: Save Docker image
@@ -63,12 +84,15 @@ jobs:
           # Create directory if not exists
           mkdir -p ~/integrated-deployment
           
-          # Stop existing containers
+          # Stop and remove only backend-related containers
           cd ~/integrated-deployment
-          docker-compose down || true
+          docker-compose stop backend mysql || true
+          docker-compose rm -f backend mysql || true
           
           # Remove old images
-          docker image prune -f
+          docker rmi integrated-mysql:latest || true
+          docker rmi integrated-be:latest || true
+#          docker image prune -f
           
     - name: Copy files to VM
       uses: appleboy/scp-action@v0.1.7
@@ -94,7 +118,17 @@ jobs:
           
           # Set environment
           # export SPRING_PROFILES_ACTIVE=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-          export SPRING_PROFILES_ACTIVE=uat
+          if [ "${github.ref}" = "refs/heads/main" ]; then
+            export SPRING_PROFILES_ACTIVE=prod
+          elif [ "${github.ref}" = "refs/heads/uat" ]; then
+            export SPRING_PROFILES_ACTIVE=uat
+          else
+            export SPRING_PROFILES_ACTIVE=dev
+          fi
+          
+          # Create network and volumes if they don't exist
+          docker network create integrated-network 2>/dev/null || true
+          docker volume create backend_uploads 2>/dev/null || true
           
           # Start only backend services (mysql + backend)
           docker-compose up -d mysql backend
@@ -106,4 +140,4 @@ jobs:
           docker-compose ps backend mysql
           
           # Clean up old images
-          docker image prune -f
+#          docker image prune -f
