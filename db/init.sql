@@ -161,10 +161,10 @@ CREATE TABLE IF NOT EXISTS user_account (
     mobileNumber VARCHAR(20),
     bankAccountNumber VARCHAR(30),
     bankName VARCHAR(100),
-    nationalId VARCHAR(20),
-    nationalIdFrontImage VARCHAR(255),
-    nationalIdBackImage VARCHAR(255),
-    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    idCardNumber VARCHAR(20),
+--     nationalIdFrontImage VARCHAR(255),
+--     nationalIdBackImage VARCHAR(255),
+    isActive BOOLEAN NOT NULL DEFAULT FALSE,
 
     createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
