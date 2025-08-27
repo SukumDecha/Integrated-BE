@@ -30,10 +30,10 @@ jobs:
         username: ${{ secrets.OVPN_USERNAME }}
         password: ${{ secrets.OVPN_PASSWORD }}
     
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
         
     - name: Cache Maven packages
@@ -61,10 +61,10 @@ jobs:
         key: ${{ secrets.VM_SSH_KEY }}
         script: |
           # Create directory if not exists
-          mkdir -p ~/integrated-be
+          mkdir -p ~/integrated-deployment
           
           # Stop existing containers
-          cd ~/integrated-be
+          cd ~/integrated-deployment
           docker-compose down || true
           
           # Remove old images
@@ -77,7 +77,7 @@ jobs:
         username: ${{ secrets.VM_USER }}
         key: ${{ secrets.VM_SSH_KEY }}
         source: "integrated-be.tar.gz,docker-compose.yml,db/"
-        target: "~/integrated-be/"
+        target: "~/integrated-deployment/"
         
     - name: Deploy on VM
       uses: appleboy/ssh-action@v1.0.3
@@ -86,23 +86,24 @@ jobs:
         username: ${{ secrets.VM_USER }}
         key: ${{ secrets.VM_SSH_KEY }}
         script: |
-          cd ~/integrated-be
+          cd ~/integrated-deployment
           
           # Load Docker image
           docker load < integrated-be.tar.gz
           rm integrated-be.tar.gz
           
           # Set environment
-          export SPRING_PROFILES_ACTIVE=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          # export SPRING_PROFILES_ACTIVE=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+          export SPRING_PROFILES_ACTIVE=uat
           
-          # Start services
-          docker-compose up -d
+          # Start only backend services (mysql + backend)
+          docker-compose up -d mysql backend
           
-          # Wait for health check
+          # Wait for backend health check
           sleep 30
           
-          # Verify deployment
-          docker-compose ps
+          # Verify backend deployment
+          docker-compose ps backend mysql
           
           # Clean up old images
           docker image prune -f
