@@ -9,6 +9,7 @@ import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.service.UserService;
@@ -63,6 +64,18 @@ public class UserV2Controller {
     ) {
         UserResponse response = service.verifyEmail(token);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
+        boolean success = service.verifyLogin(request.getEmail(), request.getPassword());
+        if (success) {
+            return ResponseEntity.ok().build(); // HTTP 200
+        } else {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Email or password is incorrect");
+        }
     }
 
 
