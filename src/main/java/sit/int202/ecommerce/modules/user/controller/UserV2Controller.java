@@ -66,7 +66,7 @@ public class UserV2Controller {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/authentications")
     public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
         boolean success = service.verifyLogin(request.getEmail(), request.getPassword());
         if (success) {
