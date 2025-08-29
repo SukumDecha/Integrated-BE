@@ -68,6 +68,21 @@ public class UserV2Controller {
 
     @PostMapping("/authentications")
     public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
+        String email = request.getEmail();
+        String password = request.getPassword();
+
+        // == Validate Inputs ==
+        if (email == null || password == null ||
+                email.trim().isEmpty() || password.trim().isEmpty() ||
+                email.length() > 50 || password.length() > 14 ||
+                !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+
+            return ResponseEntity
+                    .badRequest()
+                    .body("Email or password is invalid.");
+        }
+
+        //== Authentication Logic ==
         boolean success = service.verifyLogin(request.getEmail(), request.getPassword());
         if (success) {
             return ResponseEntity.ok().build(); // HTTP 200
