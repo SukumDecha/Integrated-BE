@@ -33,6 +33,8 @@ app:
   jwt:
     secret: your-256-bit-secret-your-256-bit-secret
     expiration-ms: 3600000 # 1 hour in milliseconds
-    jwt:
-      issuer: "http://intproj24.sit.kmutt.ac.th/ssal/"
+    issuer: "http://intproj24.sit.kmutt.ac.th/ssa1"
 
+jwt:
+  secret: CHANGE_ME_TO_A_256BIT_RANDOM_STRING________________________________
+  issuer: http://intproj24.sit.kmutt.ac.th/ssal/

@@ -25,27 +25,29 @@ services:
       timeout: 5s
       retries: 10
 
-  backend:
-    image: integrated-be:latest
-    container_name: integrated-backend
-    restart: unless-stopped
-    environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-ecommerce}
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-ecommerce}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-ecommerce123}
-    volumes:
-      - backend_uploads:/app/uploads
-    depends_on:
-      mysql:
-        condition: service_healthy
-    networks:
-      - integrated-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+#  backend:
+#    image: integrated-be:latest
+#    container_name: integrated-backend
+#    restart: unless-stopped
+#    environment:
+#      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+#      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-ecommerce}
+#      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-ecommerce}
+#      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-ecommerce123}
+#    volumes:
+#      - backend_uploads:/app/uploads
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      mysql:
+#        condition: service_healthy
+#    networks:
+#      - integrated-network
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
 
 volumes:
   mysql_data:
