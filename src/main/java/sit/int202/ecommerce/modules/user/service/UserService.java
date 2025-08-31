@@ -1,7 +1,7 @@
 package sit.int202.ecommerce.modules.user.service;
 
 import org.springframework.web.multipart.MultipartFile;
-import sit.int202.ecommerce.modules.auth.dto.RegisterRequest;
+import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 
 import java.util.Optional;
@@ -16,7 +16,7 @@ public interface UserService {
 
     boolean existsByNickname(String nickname);
 
-    UserAccount registerUser(RegisterRequest request, MultipartFile frontImage, MultipartFile backImage);
+    UserAccount registerUser(UserRegisterRequest request, MultipartFile frontImage, MultipartFile backImage);
 
     UserAccount activateUser(String email);
 }

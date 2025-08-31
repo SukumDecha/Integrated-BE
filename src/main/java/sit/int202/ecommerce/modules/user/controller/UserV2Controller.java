@@ -10,9 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import sit.int202.ecommerce.modules.auth.dto.LoginRequest;
-import sit.int202.ecommerce.modules.auth.dto.RegisterRequest;
-import sit.int202.ecommerce.modules.auth.service.AuthService;
+import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
+import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
+import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
+import sit.int202.ecommerce.modules.user.service.AuthService;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 
 import java.net.URI;
@@ -35,8 +36,8 @@ public class UserV2Controller {
             @ApiResponse(responseCode = "401", description = "Invalid credentials"),
             @ApiResponse(responseCode = "403", description = "Account not activated")
     })
-    public ResponseEntity<?> login(@RequestBody @Validated LoginRequest request) {
-        return authService.authenticate(request);
+    public ResponseEntity<TokenResponse> login(@RequestBody @Validated UserLoginRequest request) {
+        return ResponseEntity.ok(authService.authenticate(request));
     }
 
     @PostMapping("/register")
@@ -51,7 +52,7 @@ public class UserV2Controller {
     })
     public ResponseEntity<UserResponse> register(
             @Parameter(description = "User registration data", required = true)
-            @RequestPart(value = "data") @Validated RegisterRequest data,
+            @RequestPart(value = "data") @Validated UserRegisterRequest data,
 
             @Parameter(description = "Front side of ID card")
             @RequestPart(value = "idCardImageFront", required = false) MultipartFile idCardImageFront,

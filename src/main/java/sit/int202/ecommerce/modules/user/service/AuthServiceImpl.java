@@ -1,24 +1,24 @@
-package sit.int202.ecommerce.modules.auth.service;
+package sit.int202.ecommerce.modules.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import sit.int202.ecommerce.modules.auth.dto.LoginRequest;
-import sit.int202.ecommerce.modules.auth.dto.RegisterRequest;
+import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
+import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.security.jwt.JwtTokenProvider;
 import sit.int202.ecommerce.modules.email.service.EmailService;
+import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
-import sit.int202.ecommerce.modules.user.service.UserService;
 
-import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -35,41 +35,40 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider tokenProvider;
 
     @Override
-    public ResponseEntity<?> authenticate(LoginRequest request) {
+    public TokenResponse authenticate(UserLoginRequest request) {
         String email = request.getEmail();
         String password = request.getPassword();
 
         if (!isValidEmail(email) || password == null || password.isBlank() || password.length() > 14) {
-            return ResponseEntity.badRequest().body("Email or password is invalid.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email or password is invalid.");
         }
 
         Optional<UserAccount> optionalUser = userService.findByEmail(email.trim());
         if (optionalUser.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email or Password is incorrect");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email or password is incorrect.");
         }
 
         UserAccount user = optionalUser.get();
 
         if (!userService.verifyPassword(user, password)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email or Password is incorrect");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email or password is incorrect.");
         }
 
         if (!user.isActive()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("You need to activate your account before signing in.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You need to activate your account before signing in.");
         }
 
         String accessToken = tokenProvider.generateAccessToken(user);
         String refreshToken = tokenProvider.generateRefreshToken(user);
 
-        return ResponseEntity.ok(Map.of(
-                "access_token", accessToken,
-                "refresh_token", refreshToken
-        ));
+        return TokenResponse.builder()
+                .access_token(accessToken)
+                .refresh_token(refreshToken)
+                .build();
     }
 
     @Override
-    public UserResponse register(RegisterRequest request, MultipartFile frontImage, MultipartFile backImage) {
+    public UserResponse register(UserRegisterRequest request, MultipartFile frontImage, MultipartFile backImage) {
         if (userService.existsByEmail(request.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used");
         }
