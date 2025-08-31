@@ -2,10 +2,12 @@ package sit.int202.ecommerce.modules.brand.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 
 import java.util.Set;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class BrandDetailResponse extends BrandResponse {
 

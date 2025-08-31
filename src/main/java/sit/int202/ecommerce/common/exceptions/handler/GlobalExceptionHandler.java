@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidationExceptions(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorResponse.builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .status(ex.getStatusCode().value())
                 .errorMessage("Validation errors")
                 .path(request.getRequestURI())
                 .build();

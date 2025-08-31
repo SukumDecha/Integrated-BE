@@ -1,16 +1,15 @@
 package sit.int202.ecommerce.modules.user.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
 import sit.int202.ecommerce.modules.user.validation.PasswordPolicy;
+import sit.int202.ecommerce.modules.user.validation.SellerFieldsRequired;
+
+import jakarta.validation.constraints.*;
 
 @Data
-@Schema(description = "Request object for registering a new user")
+@SellerFieldsRequired
 public class UserRegisterRequest {
 
     @NotNull

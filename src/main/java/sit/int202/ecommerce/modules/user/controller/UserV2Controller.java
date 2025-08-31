@@ -5,73 +5,81 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
+import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
+import sit.int202.ecommerce.modules.user.service.AuthService;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
-import sit.int202.ecommerce.modules.user.service.UserAuthenticationService;
-import sit.int202.ecommerce.modules.user.service.UserService;
 
 import java.net.URI;
 
 @Tag(name = "User", description = "APIs for user management")
 @RestController
 @RequestMapping("/v2/users")
+@RequiredArgsConstructor
 public class UserV2Controller {
 
-    private final UserService service;
-    private final UserAuthenticationService authenticationService;
+    private final AuthService authService;
 
-    public UserV2Controller(UserService service, UserAuthenticationService authenticationService) {
-        this.service = service;
-        this.authenticationService = authenticationService;
+    @PostMapping("/login")
+    @Operation(
+            summary = "User login",
+            description = "Authenticate user and return access and refresh tokens"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login successful"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+            @ApiResponse(responseCode = "403", description = "Account not activated")
+    })
+    public ResponseEntity<TokenResponse> login(@RequestBody @Validated UserLoginRequest request) {
+        return ResponseEntity.ok(authService.authenticate(request));
     }
 
-    @PostMapping(value = "/register")
+    @PostMapping("/register")
     @Operation(
-            summary = "Register a user",
-            description = "Registers a new user with optional ID card images"
+            summary = "User registration",
+            description = "Register a new user with optional ID card images"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "User registered successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request")
+            @ApiResponse(responseCode = "400", description = "Invalid request"),
+            @ApiResponse(responseCode = "409", description = "Email or nickname already exists")
     })
     public ResponseEntity<UserResponse> register(
             @Parameter(description = "User registration data", required = true)
             @RequestPart(value = "data") @Validated UserRegisterRequest data,
 
             @Parameter(description = "Front side of ID card")
-            @RequestPart(value = "idCardImageFront", required = false) MultipartFile nationalIdFront,
+            @RequestPart(value = "idCardImageFront", required = false) MultipartFile idCardImageFront,
 
             @Parameter(description = "Back side of ID card")
-            @RequestPart(value = "idCardImageBack", required = false) MultipartFile nationalIdBack
+            @RequestPart(value = "idCardImageBack", required = false) MultipartFile idCardImageBack
     ) {
-        UserResponse response = service.register(data, nationalIdFront, nationalIdBack);
-        return ResponseEntity.created(URI.create("/v2/users/" + response.getId())).body(response);
+        UserResponse response = authService.register(data, idCardImageFront, idCardImageBack);
+        return ResponseEntity.created(URI.create("/auth/users/" + response.getId())).body(response);
     }
 
-    @PostMapping(value = "/verify-email")
+    @PostMapping("/verify-email")
     @Operation(
             summary = "Verify email",
-            description = "Verifies a user's email using a token"
+            description = "Verify user's email using a JWT token"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Email verified successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token"),
+            @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<UserResponse> verifyEmail(
+            @Parameter(description = "JWT token for email verification", required = true)
             @RequestParam("jwtToken") String token
     ) {
-        UserResponse response = service.verifyEmail(token);
+        UserResponse response = authService.verifyEmail(token);
         return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/authentications")
-    public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
-        return authenticationService.authenticate(request);
     }
 
 
