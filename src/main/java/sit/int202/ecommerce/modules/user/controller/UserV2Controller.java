@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
+import sit.int202.ecommerce.modules.user.service.UserAuthenticationService;
 import sit.int202.ecommerce.modules.user.service.UserService;
 
 import java.net.URI;
@@ -22,9 +23,11 @@ import java.net.URI;
 public class UserV2Controller {
 
     private final UserService service;
+    private final UserAuthenticationService authenticationService;
 
-    public UserV2Controller(UserService service) {
+    public UserV2Controller(UserService service, UserAuthenticationService authenticationService) {
         this.service = service;
+        this.authenticationService = authenticationService;
     }
 
     @PostMapping(value = "/register")
@@ -68,14 +71,7 @@ public class UserV2Controller {
 
     @PostMapping("/authentications")
     public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
-        boolean success = service.verifyLogin(request.getEmail(), request.getPassword());
-        if (success) {
-            return ResponseEntity.ok().build(); // HTTP 200
-        } else {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body("Email or password is incorrect");
-        }
+        return authenticationService.authenticate(request);
     }
 
 
