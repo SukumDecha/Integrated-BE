@@ -2,7 +2,9 @@ package sit.int202.ecommerce.modules.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,6 +22,7 @@ import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.repository.UserAccountRepository;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -34,6 +37,8 @@ public class UserService {
     private final FileServiceImpl fileService;
 
     private final JwtUtils jwtUtils;
+
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * Register a new user
@@ -56,6 +61,7 @@ public class UserService {
 
         UserAccount user = userMapper.toEntity(req);
         user.setActive(false);
+        user.setPassword(passwordEncoder.encode(req.getPassword()));
 
         if (req.getUserType() == UserAccountType.SELLER) {
             user.setMobileNumber(req.getMobileNumber());
@@ -106,5 +112,14 @@ public class UserService {
 
         return userMapper.toRegisterResponse(user);
     }
+
+    public boolean verifyLogin(String email, String rawPassword) {
+        Optional<UserAccount> optionalUser = repo.findByEmail(email);
+        if (optionalUser.isEmpty()) return false;
+
+        UserAccount user = optionalUser.get();
+        return passwordEncoder.matches(rawPassword, user.getPassword());
+    }
+
 
 }
