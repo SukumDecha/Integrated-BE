@@ -4,6 +4,11 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+uploads
+
+!db
+# docker-compose.yml
+
 ### STS ###
 .apt_generated
 .classpath
@@ -12,6 +17,7 @@ target/
 .settings
 .springBeans
 .sts4-cache
+
 
 ### IntelliJ IDEA ###
 .idea
