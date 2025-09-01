@@ -39,11 +39,13 @@ public class AuthServiceImpl implements AuthService {
         String email = request.getEmail();
         String password = request.getPassword();
 
-        if (!isValidEmail(email) || password == null || password.isBlank() || password.length() > 14) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email or password is invalid.");
+        if (email == null || email.isBlank() || email.length() > 50 ||
+                password == null || password.isBlank() || password.length() > 14 ||
+                !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email or password is incorrect.");
         }
 
-        Optional<UserAccount> optionalUser = userService.findByEmail(email.trim());
+        Optional<UserAccount> optionalUser = userService.findByEmail(email);
         if (optionalUser.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email or password is incorrect.");
         }
