@@ -32,7 +32,6 @@ public class JwtTokenProvider {
     public String generateAccessToken(UserAccount user) {
         return Jwts.builder()
                 .setIssuer(issuer)
-                .setSubject(user.getEmail())
                 .claim("id", user.getId())
                 .claim("email", user.getEmail())
                 .claim("nickname", user.getNickname())
