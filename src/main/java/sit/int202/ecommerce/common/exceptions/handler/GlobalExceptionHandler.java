@@ -21,9 +21,24 @@ import sit.int202.ecommerce.common.exceptions.FileUploadException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({ ResponseStatusException.class, EntityNotFoundException.class} )
-    public ResponseEntity<ErrorResponse> entityExceptions(
-            RuntimeException ex, HttpServletRequest request) {
+    // ✅ Handler สำหรับ ResponseStatusException (เช่น 400, 401, 403, 409)
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(
+            ResponseStatusException ex, HttpServletRequest request) {
+
+        ErrorResponse error = ErrorResponse.builder()
+                .status(ex.getStatusCode().value())
+                .errorMessage(ex.getReason())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(ex.getStatusCode()).body(error);
+    }
+
+    // ✅ Handler สำหรับ EntityNotFoundException (เช่น 404)
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleEntityNotFound(
+            EntityNotFoundException ex, HttpServletRequest request) {
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.NOT_FOUND.value())
@@ -31,7 +46,7 @@ public class GlobalExceptionHandler {
                 .path(request.getRequestURI())
                 .build();
 
-        return ResponseEntity.status(error.getStatus()).body(error);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler({
