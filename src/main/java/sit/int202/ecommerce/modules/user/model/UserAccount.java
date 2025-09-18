@@ -65,7 +65,6 @@ public class UserAccount {
     @Column(name = "idCardNumber", length = 20)
     private String idCardNumber;
 
-
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "refId",              // column in file_metadata
