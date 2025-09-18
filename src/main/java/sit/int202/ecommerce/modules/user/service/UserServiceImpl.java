@@ -35,11 +35,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse findById(Integer id) {
         UserAccount userAccount =  repo.findById(id).orElseThrow(() -> new EntityNotFoundException("User with this id is not existed"));
 
-        if (userAccount.getType() == UserAccountType.SELLER) {
-            return userMapper.toSellerResponse(userAccount);
-        }
-
-        return userMapper.toUserResponse(userAccount);
+        return mapToDto(userAccount);
     }
 
     public Optional<UserAccount> findByEmail(String email) {
@@ -96,7 +92,7 @@ public class UserServiceImpl implements UserService {
         return repo.save(user);
     }
 
-    public UserAccount updateById(UserUpdateRequest user, Integer id) {
+    public UserResponse updateById(UserUpdateRequest user, Integer id) {
         UserAccount existed = repo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
@@ -105,7 +101,15 @@ public class UserServiceImpl implements UserService {
 
         repo.save(existed);
 
-        return existed;
+        return mapToDto(existed);
+    }
+
+    private UserResponse mapToDto(UserAccount userAccount) {
+        if (userAccount.getType() == UserAccountType.SELLER) {
+            return userMapper.toSellerResponse(userAccount);
+        }
+
+        return userMapper.toUserResponse(userAccount);
     }
 
 }

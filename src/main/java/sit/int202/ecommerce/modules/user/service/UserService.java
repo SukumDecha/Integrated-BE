@@ -24,5 +24,5 @@ public interface UserService {
 
     UserAccount activateUser(String email);
 
-    UserAccount updateById(UserUpdateRequest user, Integer id);
+    UserResponse updateById(UserUpdateRequest user, Integer id);
 }

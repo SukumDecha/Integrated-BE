@@ -3,10 +3,12 @@ package sit.int202.ecommerce.modules.security.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.security.jwt.JwtTokenProvider;
@@ -100,6 +102,14 @@ public class AuthServiceImpl implements AuthService {
 
         UserAccount user = userService.activateUser(email);
         return userMapper.toUserResponse(user);
+    }
+
+    @Override
+    public UserPrincipal getCurrentUser() {
+        return (UserPrincipal) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
     }
 
     private boolean isValidEmail(String email) {

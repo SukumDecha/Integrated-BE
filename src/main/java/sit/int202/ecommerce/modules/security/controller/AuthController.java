@@ -7,27 +7,31 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
 import sit.int202.ecommerce.modules.security.services.AuthService;
-import sit.int202.ecommerce.modules.user.dto.response.SellerResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
+import sit.int202.ecommerce.modules.user.model.UserAccount;
+import sit.int202.ecommerce.modules.user.service.UserService;
 
 import java.net.URI;
 
-@Tag(name = "User", description = "APIs for user management")
+@Tag(name = "Auth", description = "APIs for authentication")
 @RestController
 @RequestMapping("/v2/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
-    @PostMapping("/login")
+    @PostMapping("/authenticate")
     @Operation(
             summary = "User login",
             description = "Authenticate user and return access and refresh tokens"
@@ -81,6 +85,11 @@ public class AuthController {
     ) {
         UserResponse response = authService.verifyEmail(token);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal UserPrincipal userDetails) {
+       return ResponseEntity.ok(userService.findById(userDetails.getId()));
     }
 
 

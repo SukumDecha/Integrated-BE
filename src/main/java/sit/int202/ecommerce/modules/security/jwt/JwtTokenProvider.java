@@ -63,10 +63,10 @@ public class JwtTokenProvider {
     public String generateEmailToken(UserAccount user) {
         return Jwts.builder()
                 .setIssuer(issuer)
-                .setSubject(user.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plus(24, ChronoUnit.HOURS)))
                 .signWith(key)
+                .claim("email", user.getEmail())
                 .compact();
     }
 
