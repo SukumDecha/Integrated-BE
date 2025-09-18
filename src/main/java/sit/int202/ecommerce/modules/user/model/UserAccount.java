@@ -65,11 +65,6 @@ public class UserAccount {
     @Column(name = "idCardNumber", length = 20)
     private String idCardNumber;
 
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "refId", referencedColumnName = "id", insertable = false, updatable = false)
-//    @Where(clause = "refType = 'USER_ACCOUNT' AND usageType = 'idCardImageFront'")
-//    private FileEntity idCardImageFront;
-
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "refId",              // column in file_metadata

@@ -3,8 +3,13 @@ package sit.int202.ecommerce.modules.security.jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import sit.int202.ecommerce.modules.security.services.UserDetailsServiceImpl;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 
 import javax.crypto.SecretKey;
@@ -23,6 +28,9 @@ public class JwtTokenProvider {
     private String secret;
 
     private SecretKey key;
+
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
 
     @PostConstruct
     void init() {
@@ -64,22 +72,41 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            System.out.println("[JWT] ✅ Token is valid");
             return true;
         } catch (Exception e) {
+            System.out.println("[JWT] ❌ Invalid token: " + e.getMessage());
             return false;
         }
     }
 
     public String getEmailFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        try {
+            String email = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .get("email", String.class);
+            System.out.println("[JWT] ✅ Email from token = " + email);
+            return email;
+        } catch (Exception e) {
+            System.out.println("[JWT] ❌ Failed to extract email: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public Authentication getAuthentication(String token) {
+        String email = getEmailFromToken(token);
+        if (email == null) {
+            System.out.println("[JWT] ❌ Email is null from token");
+            return null;
+        }
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        System.out.println("[JWT] ✅ Loaded user: " + userDetails.getUsername());
+
+        return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }
 }

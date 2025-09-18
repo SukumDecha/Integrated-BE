@@ -11,6 +11,7 @@ import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.Where;
 import sit.int202.ecommerce.modules.brand.model.Brand;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
+import sit.int202.ecommerce.modules.user.model.UserAccount;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -31,6 +32,12 @@ public class SaleItem {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "brandId", nullable = false)
     private Brand brand;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "sellerId", nullable = false)
+    private UserAccount seller;
 
     @Size(max = 60)
     @NotNull
