@@ -357,4 +357,16 @@ public class SaleItemService {
         return spec;
     }
 
+    @Transactional
+    public PaginateResponse<SaleItemDetailResponse> getBySellerId(Integer sellerId, SaleItemPaginationRequest request) {
+        Pageable pageable = buildPageable(request);
+
+        Specification<SaleItem> spec = (root, query, cb) -> cb.equal(root.get("seller").get("id"), sellerId);
+
+        Page<SaleItem> saleItems = saleItemRepository.findAll(spec, pageable);
+
+        Page<SaleItemDetailResponse> dtoPage = saleItems.map(saleItemMapper::toDetailResponse);
+
+        return PaginationUtils.toPaginateResponse(dtoPage);
+    }
 }

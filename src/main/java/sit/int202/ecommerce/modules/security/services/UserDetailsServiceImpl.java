@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.repository.UserAccountRepository;
 
@@ -25,15 +26,23 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         UserAccount user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        return User.builder()
-                .username(user.getEmail())
-                .password(user.getPassword())
-                .authorities(getAuthorities(user))
-                .accountExpired(false)
-                .accountLocked(false)
-                .credentialsExpired(false)
-                .disabled(!user.isActive())
-                .build();
+//        return User.builder()
+//                .username(user.getEmail())
+//                .password(user.getPassword())
+//                .authorities(getAuthorities(user))
+//                .accountExpired(false)
+//                .accountLocked(false)
+//                .credentialsExpired(false)
+//                .disabled(!user.isActive())
+//                .build();
+        return new UserPrincipal(
+                user.getId(),
+                user.getEmail(),
+                user.getPassword(),
+                user.getType().name(),
+                user.isActive(),
+                user.getNickname()
+        );
     }
 
     private Collection<? extends GrantedAuthority> getAuthorities(UserAccount user) {
