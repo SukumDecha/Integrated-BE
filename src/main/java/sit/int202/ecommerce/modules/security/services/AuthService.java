@@ -1,6 +1,5 @@
-package sit.int202.ecommerce.modules.user.service;
+package sit.int202.ecommerce.modules.security.services;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;

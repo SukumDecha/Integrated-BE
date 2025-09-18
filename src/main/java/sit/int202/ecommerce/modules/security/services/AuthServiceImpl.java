@@ -1,10 +1,8 @@
-package sit.int202.ecommerce.modules.user.service;
+package sit.int202.ecommerce.modules.security.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +16,7 @@ import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
+import sit.int202.ecommerce.modules.user.service.UserService;
 
 import java.util.Optional;
 
@@ -65,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
 
         return TokenResponse.builder()
                 .access_token(accessToken)
-                .refresh_token(refreshToken)
+//                .refresh_token(refreshToken)
                 .build();
     }
 
