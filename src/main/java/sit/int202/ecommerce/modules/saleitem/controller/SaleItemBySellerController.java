@@ -14,6 +14,7 @@ import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse
 import sit.int202.ecommerce.modules.saleitem.service.SaleItemService;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationRequest;
+import sit.int202.ecommerce.modules.user.model.UserAccountType;
 
 
 import java.util.List;
@@ -48,8 +49,9 @@ public class SaleItemBySellerController {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
+        UserAccountType role = UserAccountType.valueOf(user.getRole());
 
-        if (!"SELLER".equalsIgnoreCase(user.getRole())) {
+        if (role != UserAccountType.SELLER) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: You are not a seller");
         }
 
