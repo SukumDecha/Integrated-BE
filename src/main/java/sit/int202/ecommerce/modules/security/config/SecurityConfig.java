@@ -55,11 +55,15 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                                .requestMatchers("/auth/**").permitAll()
-                                .requestMatchers("/v2/users/register", "/v2/users/verify-email").permitAll()
-                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-//                                .anyRequest().authenticated()
-                            .anyRequest().permitAll()
+                                .requestMatchers("/v2/auth/register", "/v2/auth/verify-email", "/v2/auth/authenticate").permitAll()
+                                .requestMatchers(
+                                        "/v1/swagger-ui/**",
+                                        "/v1/api-docs/**",
+                                        "/v1/swagger-resources/**",
+                                        "/v1/webjars/**"
+                                ).permitAll()
+                                .anyRequest().authenticated()
+//                            .anyRequest().permitAll()
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

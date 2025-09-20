@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import sit.int202.ecommerce.modules.security.services.UserDetailsServiceImpl;
+import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 
 import javax.crypto.SecretKey;
@@ -37,20 +38,20 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(UserAccount user) {
+    public String generateAccessToken(UserResponse user) {
         return Jwts.builder()
                 .setIssuer(issuer)
                 .claim("id", user.getId())
                 .claim("email", user.getEmail())
                 .claim("nickname", user.getNickname())
-                .claim("role", user.getType().name())
+                .claim("role", user.getUserType().name())
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plus(30, ChronoUnit.MINUTES)))
                 .signWith(key)
                 .compact();
     }
 
-    public String generateRefreshToken(UserAccount user) {
+    public String generateRefreshToken(UserResponse user) {
         return Jwts.builder()
                 .setIssuer(issuer)
                 .setSubject("refresh:" + user.getId())
@@ -70,15 +71,59 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public boolean validateToken(String token) {
+    public boolean validateAccessToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            System.out.println("[JWT] ✅ Token is valid");
+            var claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            // Extra validation for Access Tokens
+            if (claims.get("email", String.class) == null || claims.get("role", String.class) == null) {
+                System.out.println("[JWT] ❌ Invalid access token: missing claims");
+                return false;
+            }
+
+            System.out.println("[JWT] ✅ Access token is valid");
             return true;
         } catch (Exception e) {
-            System.out.println("[JWT] ❌ Invalid token: " + e.getMessage());
+            System.out.println("[JWT] ❌ Invalid access token: " + e.getMessage());
             return false;
         }
+    }
+
+    public boolean validateRefreshToken(String token) {
+        try {
+            var claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            // Refresh tokens are issued with "refresh:<userId>" as subject
+            String subject = claims.getSubject();
+            if (subject == null || !subject.startsWith("refresh:")) {
+                System.out.println("[JWT] ❌ Invalid refresh token: bad subject");
+                return false;
+            }
+
+            System.out.println("[JWT] ✅ Refresh token is valid");
+            return true;
+        } catch (Exception e) {
+            System.out.println("[JWT] ❌ Invalid refresh token: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public int getUserIdFromRefreshToken(String refreshToken) {
+        var claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(refreshToken)
+                .getBody();
+        String subject = claims.getSubject();
+        return Integer.parseInt(subject.replace("refresh:", ""));
     }
 
     public String getEmailFromToken(String token) {

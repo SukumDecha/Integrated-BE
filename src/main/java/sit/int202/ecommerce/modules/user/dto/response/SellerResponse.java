@@ -8,5 +8,5 @@ public class SellerResponse extends UserResponse {
 
     private String bankName;
     private String bankAccount;
-    private String phoneNumber;
+    private String mobileNumber;
 }

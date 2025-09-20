@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface UserService {
 
-   UserResponse findById(Integer id);
+    UserResponse findById(Integer id);
 
     Optional<UserAccount> findByEmail(String email);
 

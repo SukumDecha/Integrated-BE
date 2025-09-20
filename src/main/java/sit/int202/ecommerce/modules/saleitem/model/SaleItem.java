@@ -84,7 +84,7 @@ public class SaleItem {
     private Instant updatedOn;
 
     @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "refId", referencedColumnName = "id", insertable = false, updatable = false)
+    @JoinColumn(name = "refId", referencedColumnName = "id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     @Where(clause = "refType = 'SALE_ITEM' AND usageType = 'GALLERY'")
     private List<FileEntity> files;
 }

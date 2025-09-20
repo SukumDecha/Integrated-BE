@@ -10,7 +10,7 @@ public class UserResponse {
 
     private String nickname;
     private String email;
-    private String fullName;
+    private String fullname;
     private boolean isActive;
     private UserAccountType userType;
 }
