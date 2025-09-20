@@ -143,11 +143,10 @@ public class SaleItemService {
         List<FileEntity> newFilesToStore = new ArrayList<>();
         Set<String> providedFileNames = new HashSet<>();
 
-        if (imageInfos == null || imageInfos.isEmpty()) {
+        if (imageInfos.isEmpty()) {
             // Remove all images
             existingFiles.forEach(f -> fileService.deleteFileById(f.getId()));
             existing.setFiles(new ArrayList<>());
-            System.out.println("Removed all files");
         } else {
             if (imageInfos.size() > 4) {
                 throw new FileUploadException("Maximum 4 images are allowed.");
@@ -156,12 +155,10 @@ public class SaleItemService {
             // Collect fileNames of existing images to keep
             for (SaleItemImageRequest info : imageInfos) {
                 if (info.getFileName() != null) {
-                    System.out.println("File Name: " + info.getFileName());
                     providedFileNames.add(info.getFileName());
                 }
             }
 
-            existingFiles.stream().forEach(fileEntity -> System.out.println("Existed FIle Name: " + fileEntity.getOriginalFilename()));
             // Delete any existing file not in provided list
             existingFiles.stream()
                     .filter(f -> !providedFileNames.contains(f.getOriginalFilename()))

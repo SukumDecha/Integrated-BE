@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
+import sit.int202.ecommerce.modules.user.dto.response.SellerResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 
@@ -15,6 +16,10 @@ public class UserMapper {
 
     public UserResponse toUserResponse(UserAccount user) {
         return modelMapper.map(user, UserResponse.class);
+    }
+
+    public UserResponse toSellerResponse(UserAccount user) {
+        return modelMapper.map(user, SellerResponse.class);
     }
 
     public UserAccount toEntity(UserRegisterRequest request) {
