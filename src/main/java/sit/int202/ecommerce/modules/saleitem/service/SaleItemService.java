@@ -11,7 +11,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
 import sit.int202.ecommerce.common.utils.PaginationUtils;
@@ -33,6 +35,12 @@ import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
 import sit.int202.ecommerce.modules.saleitem.mapper.SaleItemMapper;
 import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
+import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
+import sit.int202.ecommerce.modules.user.mapper.UserMapper;
+import sit.int202.ecommerce.modules.user.service.UserService;
+import sit.int202.ecommerce.modules.user.model.UserAccountType;
+
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -48,6 +56,9 @@ public class SaleItemService {
     private final FileServiceImpl fileService;
     private final FileRepository fileRepository;
     private final EntityManager em;
+    private final UserService userService;
+    private final UserMapper userMapper;
+    private final UserAccountType  userType;
 
     public List<SaleItemGalleryResponse> getAllSaleItems(String sortBy, String sortDirection) {
         return saleItemRepository.findAll(SortUtils.buildSort(sortBy, sortDirection))
@@ -71,15 +82,30 @@ public class SaleItemService {
     }
 
     @Transactional
-    public SaleItemDetailResponse createSaleItem(SaleItemCreateRequest item) {
+    public SaleItemDetailResponse createSaleItem(SaleItemCreateRequest item, Integer sellerId) {
+        //ดึง Seller จาก token
+        UserResponse sellerDTO = userService.findById(sellerId);
+        if (sellerDTO == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Seller not found");
+        }
+        if (sellerDTO.getUserType() != UserAccountType.SELLER || !sellerDTO.isActive()){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User is not active or not a seller");
+        }
+
+        // ดึง Brand
         BrandResponse brandDTO = brandService.getBrandById(item.getBrand().getId());
+        if (brandDTO == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brand not found");
+        }
         Brand brand = brandMapper.toEntity(brandDTO);
 
+        //Map sale item & set seller
         SaleItem tempSaleItem = saleItemMapper.toEntity(item);
         tempSaleItem.setBrand(brand);
 
         SaleItem saleItem = saleItemRepository.save(tempSaleItem);
 
+        //Upload image files (ตามเดิม)
         List<SaleItemImageRequest> imageInfos = item.getImageInfos();
         List<FileEntity> uploadedFiles = new ArrayList<>();
 
