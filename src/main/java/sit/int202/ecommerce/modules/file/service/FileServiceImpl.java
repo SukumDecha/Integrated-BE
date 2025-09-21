@@ -105,7 +105,6 @@ public class FileServiceImpl implements FileService {
         fileEntity.setFileSize(multipartFile.getSize());
         fileEntity.setFilePath(filePath);
         fileEntity.setDisplayOrder(displayOrder != null ? displayOrder : 0);
-        fileEntity.setCreatedOn(LocalDateTime.now(ZONE));
 
         return fileRepository.save(fileEntity);
     }

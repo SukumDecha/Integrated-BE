@@ -57,8 +57,6 @@ public class SaleItemService {
     private final FileRepository fileRepository;
     private final EntityManager em;
     private final UserService userService;
-    private final UserMapper userMapper;
-    private final UserAccountType  userType;
 
     public List<SaleItemGalleryResponse> getAllSaleItems(String sortBy, String sortDirection) {
         return saleItemRepository.findAll(SortUtils.buildSort(sortBy, sortDirection))
