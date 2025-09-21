@@ -60,7 +60,13 @@ public class SecurityConfig {
                                         "/v1/swagger-ui/**",
                                         "/v1/api-docs/**",
                                         "/v1/swagger-resources/**",
-                                        "/v1/webjars/**"
+                                        "/v1/webjars/**",
+                                        "/v1/sale-items/**",
+                                        "/v2/sale-items",
+                                        "/v2/sale-items/storage-sizes",
+                                        "/v2/sale-items/{id}",
+                                        "/v1/brands/**",
+                                        "/files"
                                 ).permitAll()
                                 .anyRequest().authenticated()
 //                            .anyRequest().permitAll()
