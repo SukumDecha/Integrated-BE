@@ -37,6 +37,8 @@ import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
+import sit.int202.ecommerce.modules.user.model.UserAccount;
+import sit.int202.ecommerce.modules.user.repository.UserAccountRepository;
 import sit.int202.ecommerce.modules.user.service.UserService;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
 
@@ -50,6 +52,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SaleItemService {
     private final SaleItemRepository saleItemRepository;
+    private final UserAccountRepository userAccountRepository;
     private final BrandService brandService;
     private final SaleItemMapper saleItemMapper;
     private final BrandMapper brandMapper;
@@ -100,6 +103,11 @@ public class SaleItemService {
         //Map sale item & set seller
         SaleItem tempSaleItem = saleItemMapper.toEntity(item);
         tempSaleItem.setBrand(brand);
+
+        // ดึง User Entity จาก sellerId แล้วผูกกับ saleItem
+        UserAccount seller = userAccountRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Seller not found"));
+        tempSaleItem.setSeller(seller);
 
         SaleItem saleItem = saleItemRepository.save(tempSaleItem);
 
