@@ -13,7 +13,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
+import sit.int202.ecommerce.common.exceptions.BadRequestException;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
+import sit.int202.ecommerce.common.exceptions.ForbiddenException;
+import sit.int202.ecommerce.common.exceptions.UnauthorizedException;
 import sit.int202.ecommerce.common.utils.PaginationUtils;
 import sit.int202.ecommerce.common.utils.SortUtils;
 import sit.int202.ecommerce.modules.brand.dto.response.BrandResponse;
@@ -33,6 +36,9 @@ import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
 import sit.int202.ecommerce.modules.saleitem.mapper.SaleItemMapper;
 import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
+import sit.int202.ecommerce.modules.security.model.UserPrincipal;
+import sit.int202.ecommerce.modules.user.model.UserAccount;
+import sit.int202.ecommerce.modules.user.repository.UserAccountRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,6 +53,7 @@ public class SaleItemService {
     private final BrandMapper brandMapper;
     private final FileServiceImpl fileService;
     private final FileRepository fileRepository;
+    private final UserAccountRepository userAccountRepository;
     private final EntityManager em;
 
     public List<SaleItemGalleryResponse> getAllSaleItems(String sortBy, String sortDirection) {
@@ -358,13 +365,43 @@ public class SaleItemService {
     }
 
     @Transactional
-    public PaginateResponse<SaleItemDetailResponse> getBySellerId(Integer sellerId, SaleItemPaginationRequest request) {
+    public PaginateResponse<SaleItemDetailResponse> getBySellerId(
+            Integer sellerId,
+            SaleItemPaginationRequest request,
+            UserPrincipal currentUser // เพิ่ม user จาก token
+    ) {
+        // ตรวจสอบว่า user login แล้วหรือยัง
+        if (currentUser == null) {
+            throw new UnauthorizedException("Unauthorized: No user information in token.");
+        }
+
+        // ตรวจสอบว่า ID ใน token ตรงกับ path parameter
+        if (!sellerId.equals(currentUser.getId())) {
+            throw new ForbiddenException("Access denied: Seller ID mismatch.");
+        }
+
+        // ตรวจสอบ role ว่าเป็น seller
+        if (!"SELLER".equalsIgnoreCase(currentUser.getRole())) {
+            throw new ForbiddenException("Access denied: You are not a seller.");
+        }
+
+        // ดึง seller จาก database
+        UserAccount seller = userAccountRepository.findById(sellerId)
+                .orElseThrow(() -> new UnauthorizedException("Seller not found."));
+
+        if (!seller.isActive()) {
+            throw new ForbiddenException("User is not active.");
+        }
+
+        // ตรวจสอบ parameter invalid
+        if (request.getPage() < 0 || request.getSize() <= 0 || request.getSize() > 100) {
+            throw new BadRequestException("Invalid pagination parameters.");
+        }
+
+        // ดึงข้อมูล
         Pageable pageable = buildPageable(request);
-
         Specification<SaleItem> spec = (root, query, cb) -> cb.equal(root.get("seller").get("id"), sellerId);
-
         Page<SaleItem> saleItems = saleItemRepository.findAll(spec, pageable);
-
         Page<SaleItemDetailResponse> dtoPage = saleItems.map(saleItemMapper::toDetailResponse);
 
         return PaginationUtils.toPaginateResponse(dtoPage);
