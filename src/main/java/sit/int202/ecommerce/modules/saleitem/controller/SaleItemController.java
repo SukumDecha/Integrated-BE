@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
@@ -17,6 +18,7 @@ import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryRespons
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
 import sit.int202.ecommerce.modules.saleitem.service.SaleItemService;
+import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 
 import java.util.List;
 
@@ -83,8 +85,9 @@ public class SaleItemController {
                     content = @Content
             )
     })
-    public ResponseEntity<SaleItemDetailResponse> createSaleItem(@Valid @ModelAttribute SaleItemCreateRequest request) {
-        var saleItem = saleItemService.createSaleItem(request);
+    public ResponseEntity<SaleItemDetailResponse> createSaleItem(@Valid @ModelAttribute SaleItemCreateRequest request,  @AuthenticationPrincipal UserPrincipal principal) {
+        Integer sellerId = principal.getId();
+        var saleItem = saleItemService.createSaleItem(request, sellerId);
         return ResponseEntity.status(201).body(saleItem);
     }
 
