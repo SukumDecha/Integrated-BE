@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -61,12 +63,13 @@ public class FileEntity {
     @Column(name = "displayOrder")
     private Integer displayOrder;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "createdOn")
-    private LocalDateTime createdOn;
+    @CreationTimestamp
+    @Column(name = "createdOn", updatable = false)
+    private Instant createdOn;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @UpdateTimestamp
     @Column(name = "updatedOn")
     private Instant updatedOn;
+
 
 }

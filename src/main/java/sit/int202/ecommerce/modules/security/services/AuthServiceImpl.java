@@ -1,24 +1,30 @@
-package sit.int202.ecommerce.modules.user.service;
+package sit.int202.ecommerce.modules.security.services;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import sit.int202.ecommerce.common.exceptions.AccountNotActivatedException;
+import sit.int202.ecommerce.common.exceptions.MissingTokenException;
+import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.security.jwt.JwtTokenProvider;
 import sit.int202.ecommerce.modules.email.service.EmailService;
-import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
+import sit.int202.ecommerce.modules.user.service.UserService;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -35,7 +41,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider tokenProvider;
 
     @Override
-    public TokenResponse authenticate(UserLoginRequest request) {
+    public Map<String, String> authenticate(UserLoginRequest request) {
         String email = request.getEmail();
         String password = request.getPassword();
 
@@ -60,13 +66,15 @@ public class AuthServiceImpl implements AuthService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You need to activate your account before signing in.");
         }
 
-        String accessToken = tokenProvider.generateAccessToken(user);
-        String refreshToken = tokenProvider.generateRefreshToken(user);
+        UserResponse userResponse = userMapper.toUserResponse(user);
 
-        return TokenResponse.builder()
-                .access_token(accessToken)
-                .refresh_token(refreshToken)
-                .build();
+        String accessToken = tokenProvider.generateAccessToken(userResponse);
+        String refreshToken = tokenProvider.generateRefreshToken(userResponse);
+
+        return Map.of(
+                "accessToken", accessToken,
+                "refreshToken", refreshToken
+        );
     }
 
     @Override
@@ -83,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         UserAccount user = userService.registerUser(request, frontImage, backImage);
-        
+
         String token = tokenProvider.generateEmailToken(user);
         emailService.sendVerificationEmail(user.getEmail(), user.getNickname(), token);
 
@@ -101,6 +109,57 @@ public class AuthServiceImpl implements AuthService {
 
         UserAccount user = userService.activateUser(email);
         return userMapper.toUserResponse(user);
+    }
+
+    @Override
+    public UserPrincipal getCurrentUser() {
+        return (UserPrincipal) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+    }
+
+    @Override
+    public Map<String, String> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = extractRefreshToken(request);
+
+        if (refreshToken == null || !tokenProvider.validateRefreshToken(refreshToken)) {
+            throw new MissingTokenException("Missing refresh token");
+        }
+
+        int userId = tokenProvider.getUserIdFromRefreshToken(refreshToken);
+        UserResponse user = userService.findById(userId);
+
+        if (!user.isActive()) {
+            throw new AccountNotActivatedException("User account is not activated");
+        }
+
+        String newAccessToken = tokenProvider.generateAccessToken(user);
+        String newRefreshToken = tokenProvider.generateRefreshToken(user);
+
+        updateRefreshTokenCookie(response, newRefreshToken);
+        response.addHeader("Authorization", "Bearer " + newAccessToken);
+
+        return Map.of("accessToken", newAccessToken);
+    }
+
+    private String extractRefreshToken(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    private void updateRefreshTokenCookie(HttpServletResponse response, String newRefreshToken) {
+        Cookie cookie = new Cookie("refreshToken", newRefreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false); // Change to true in production
+        cookie.setPath("/");
+        response.addCookie(cookie);
     }
 
     private boolean isValidEmail(String email) {

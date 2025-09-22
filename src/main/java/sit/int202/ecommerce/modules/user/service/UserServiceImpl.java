@@ -1,5 +1,6 @@
 package sit.int202.ecommerce.modules.user.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
 import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
+import sit.int202.ecommerce.modules.user.dto.request.UserUpdateRequest;
+import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
@@ -29,6 +32,11 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final FileServiceImpl fileService;
 
+    public UserResponse findById(Integer id) {
+        UserAccount userAccount =  repo.findById(id).orElseThrow(() -> new EntityNotFoundException("User with this id is not existed"));
+
+        return mapToDto(userAccount);
+    }
 
     public Optional<UserAccount> findByEmail(String email) {
         return repo.findByEmail(email);
@@ -82,6 +90,26 @@ public class UserServiceImpl implements UserService {
 
         user.setActive(true);
         return repo.save(user);
+    }
+
+    public UserResponse updateById(UserUpdateRequest user, Integer id) {
+        UserAccount existed = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        existed.setNickname(user.getNickname());
+        existed.setFullname(user.getFullname());
+
+        repo.save(existed);
+
+        return mapToDto(existed);
+    }
+
+    private UserResponse mapToDto(UserAccount userAccount) {
+        if (userAccount.getType() == UserAccountType.SELLER) {
+            return userMapper.toSellerResponse(userAccount);
+        }
+
+        return userMapper.toUserResponse(userAccount);
     }
 
 }

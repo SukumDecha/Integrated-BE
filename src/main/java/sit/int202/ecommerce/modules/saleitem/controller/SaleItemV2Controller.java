@@ -8,10 +8,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
@@ -19,6 +18,7 @@ import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationReque
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.service.SaleItemService;
+import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,11 +38,24 @@ public class SaleItemV2Controller {
 
     @PostMapping()
     @Operation(summary = "Create sale item with image files")
-    @ApiResponse(responseCode = "201", description = "Sale item created")
-    @ApiResponse(responseCode = "500", description = "Sale item create failed")
-    public ResponseEntity<SaleItemDetailResponse> createSaleItem(@Valid @ModelAttribute SaleItemCreateRequest request) {
-        var saleItem = saleItemService.createSaleItem(request);
-        return ResponseEntity.status(201).body(saleItem);
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Sale item created"),
+            @ApiResponse(responseCode = "400", description = "Missing/Invalid request parameters"),
+            @ApiResponse(responseCode = "401", description = "Seller not found or invalid token"),
+            @ApiResponse(responseCode = "403", description = "User is not active,request seller id not matched with id in access token"),
+            @ApiResponse(responseCode = "404", description = "Brand not found")
+    })
+    public ResponseEntity<SaleItemDetailResponse> createSaleItem(
+            @Valid @ModelAttribute SaleItemCreateRequest request,
+            @AuthenticationPrincipal UserPrincipal userDetails) {
+
+        Integer sellerId = userDetails.getId();
+        // userId จาก token แล้วส่งเข้าให้ service
+        SaleItemDetailResponse response = saleItemService.createSaleItem(request, sellerId);
+
+        // ส่งสถานะ 201 Created ตาม RESTful
+        return ResponseEntity.status(201).body(response);
+
     }
 
     @PutMapping(value = "/{id}")

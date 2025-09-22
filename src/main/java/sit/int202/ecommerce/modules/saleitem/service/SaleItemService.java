@@ -11,7 +11,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.common.exceptions.BadRequestException;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
@@ -37,8 +39,12 @@ import sit.int202.ecommerce.modules.saleitem.mapper.SaleItemMapper;
 import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
+import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
+import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.repository.UserAccountRepository;
+import sit.int202.ecommerce.modules.user.service.UserService;
+import sit.int202.ecommerce.modules.user.model.UserAccountType;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -48,6 +54,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SaleItemService {
     private final SaleItemRepository saleItemRepository;
+    private final UserAccountRepository userAccountRepository;
     private final BrandService brandService;
     private final SaleItemMapper saleItemMapper;
     private final BrandMapper brandMapper;
@@ -55,6 +62,7 @@ public class SaleItemService {
     private final FileRepository fileRepository;
     private final UserAccountRepository userAccountRepository;
     private final EntityManager em;
+    private final UserService userService;
 
     public List<SaleItemGalleryResponse> getAllSaleItems(String sortBy, String sortDirection) {
         return saleItemRepository.findAll(SortUtils.buildSort(sortBy, sortDirection))
@@ -78,15 +86,35 @@ public class SaleItemService {
     }
 
     @Transactional
-    public SaleItemDetailResponse createSaleItem(SaleItemCreateRequest item) {
+    public SaleItemDetailResponse createSaleItem(SaleItemCreateRequest item, Integer sellerId) {
+        //ดึง Seller จาก token
+        UserResponse sellerDTO = userService.findById(sellerId);
+        if (sellerDTO == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Seller not found");
+        }
+        if (sellerDTO.getUserType() != UserAccountType.SELLER || !sellerDTO.isActive()){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User is not active or not a seller");
+        }
+
+        // ดึง Brand
         BrandResponse brandDTO = brandService.getBrandById(item.getBrand().getId());
+        if (brandDTO == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Brand not found");
+        }
         Brand brand = brandMapper.toEntity(brandDTO);
 
+        //Map sale item & set seller
         SaleItem tempSaleItem = saleItemMapper.toEntity(item);
         tempSaleItem.setBrand(brand);
 
+        // ดึง User Entity จาก sellerId แล้วผูกกับ saleItem
+        UserAccount seller = userAccountRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Seller not found"));
+        tempSaleItem.setSeller(seller);
+
         SaleItem saleItem = saleItemRepository.save(tempSaleItem);
 
+        //Upload image files (ตามเดิม)
         List<SaleItemImageRequest> imageInfos = item.getImageInfos();
         List<FileEntity> uploadedFiles = new ArrayList<>();
 
@@ -150,11 +178,10 @@ public class SaleItemService {
         List<FileEntity> newFilesToStore = new ArrayList<>();
         Set<String> providedFileNames = new HashSet<>();
 
-        if (imageInfos == null || imageInfos.isEmpty()) {
+        if (imageInfos.isEmpty()) {
             // Remove all images
             existingFiles.forEach(f -> fileService.deleteFileById(f.getId()));
             existing.setFiles(new ArrayList<>());
-            System.out.println("Removed all files");
         } else {
             if (imageInfos.size() > 4) {
                 throw new FileUploadException("Maximum 4 images are allowed.");
@@ -163,12 +190,10 @@ public class SaleItemService {
             // Collect fileNames of existing images to keep
             for (SaleItemImageRequest info : imageInfos) {
                 if (info.getFileName() != null) {
-                    System.out.println("File Name: " + info.getFileName());
                     providedFileNames.add(info.getFileName());
                 }
             }
 
-            existingFiles.stream().forEach(fileEntity -> System.out.println("Existed FIle Name: " + fileEntity.getOriginalFilename()));
             // Delete any existing file not in provided list
             existingFiles.stream()
                     .filter(f -> !providedFileNames.contains(f.getOriginalFilename()))
