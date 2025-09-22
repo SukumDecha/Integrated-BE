@@ -61,10 +61,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/v2/auth/register", "/v2/auth/verify-email", "/v2/auth/authenticate").permitAll()
-                        .requestMatchers("/v1/swagger-ui/**", "/v1/api-docs/**", "/v1/swagger-resources/**", "/v1/webjars/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/v1/sale-items","/v2/sale-items", "/v2/sale-items/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/v1/brands/**").permitAll()
+                                .requestMatchers("/**").permitAll()
+//                        .requestMatchers("/v2/auth/register", "/v2/auth/verify-email", "/v2/auth/authenticate").permitAll()
+//                        .requestMatchers("/v1/swagger-ui/**", "/v1/api-docs/**", "/v1/swagger-resources/**", "/v1/webjars/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/v1/sale-items","/v2/sale-items", "/v2/sale-items/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/v1/brands/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -83,7 +84,7 @@ public class SecurityConfig {
 //            List<String> originList = List.of(allowedOrigins.split("\\s*,\\s*"));
 //            configuration.setAllowedOrigins(originList);
 //        }
-        configuration.setAllowedOriginPatterns(List.of("*")); // หรือใส่ origin ชัดๆ
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Origin", "Accept"));
         configuration.setAllowCredentials(true);
