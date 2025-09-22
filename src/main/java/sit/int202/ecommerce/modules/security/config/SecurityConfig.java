@@ -77,13 +77,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        if ("*".equals(allowedOrigins)) {
-            configuration.setAllowedOriginPatterns(List.of("*"));
-        } else {
-            List<String> originList = List.of(allowedOrigins.split("\\s*,\\s*"));
-            configuration.setAllowedOrigins(originList);
-        }
-
+//        if ("*".equals(allowedOrigins)) {
+//            configuration.setAllowedOriginPatterns(List.of("*"));
+//        } else {
+//            List<String> originList = List.of(allowedOrigins.split("\\s*,\\s*"));
+//            configuration.setAllowedOrigins(originList);
+//        }
+        configuration.setAllowedOriginPatterns(List.of("*")); // หรือใส่ origin ชัดๆ
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Origin", "Accept"));
         configuration.setAllowCredentials(true);
