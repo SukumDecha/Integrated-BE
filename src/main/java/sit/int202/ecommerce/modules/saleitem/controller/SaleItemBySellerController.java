@@ -16,9 +16,6 @@ import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationRequest;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
 
-
-import java.util.List;
-
 @RestController
 @RequestMapping("/v2/sellers")
 @RequiredArgsConstructor
@@ -31,35 +28,15 @@ public class SaleItemBySellerController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "List of sale items owned by this seller"),
             @ApiResponse(responseCode = "400", description = "Missing/Invalid request parameters"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized: Token missing or invalid"),
-            @ApiResponse(responseCode = "403", description = "Forbidden: Not seller or ID mismatch")
+            @ApiResponse(responseCode = "401", description = "Seller not found or invalid token"),
+            @ApiResponse(responseCode = "403", description = "User is not active or request seller id not matched with id in access token")
     })
     public ResponseEntity<?> getSaleItemsBySeller(
             @PathVariable Integer id,
             @AuthenticationPrincipal UserPrincipal user,
-            @ModelAttribute SaleItemPaginationRequest request,
-            HttpServletRequest httpRequest
+            @ModelAttribute SaleItemPaginationRequest request
     ) {
-        System.out.println("==== [TOKEN DEBUG] ====");
-        System.out.println("Authorization: " + httpRequest.getHeader("Authorization"));
-        System.out.println("UserPrincipal: " + user);
-        System.out.println("Role: " + (user != null ? user.getRole() : "null"));
-        System.out.println("ID: " + (user != null ? user.getId() : "null"));
-        System.out.println("Path ID: " + id);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-        }
-        UserAccountType role = UserAccountType.valueOf(user.getRole());
-
-        if (role != UserAccountType.SELLER) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: You are not a seller");
-        }
-
-        if (!id.equals(user.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: ID mismatch");
-        }
-
-        PaginateResponse<SaleItemDetailResponse> saleItems = saleItemService.getBySellerId(id, request);
-        return ResponseEntity.ok(saleItems);
+        PaginateResponse<SaleItemDetailResponse> response = saleItemService.getBySellerId(id, request, user);
+        return ResponseEntity.ok(response);
     }
 }

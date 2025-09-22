@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.common.dto.ErrorResponse;
+import sit.int202.ecommerce.common.exceptions.BadRequestException;
 import sit.int202.ecommerce.common.exceptions.BrandHasSaleItemsException;
 import sit.int202.ecommerce.common.exceptions.FileUploadException;
 
@@ -120,6 +121,17 @@ public class GlobalExceptionHandler {
             HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value())
+                .errorMessage(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(error.getStatus()).body(error);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex, HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
                 .errorMessage(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
