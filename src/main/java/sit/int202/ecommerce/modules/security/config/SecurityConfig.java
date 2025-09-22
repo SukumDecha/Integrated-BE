@@ -65,8 +65,7 @@ public class SecurityConfig {
                                         "/v2/sale-items",
                                         "/v2/sale-items/storage-sizes",
                                         "/v2/sale-items/{id}",
-                                        "/v1/brands/**",
-                                        "/files"
+                                        "/v1/brands/**"
                                 ).permitAll()
                                 .anyRequest().authenticated()
 //                            .anyRequest().permitAll()
