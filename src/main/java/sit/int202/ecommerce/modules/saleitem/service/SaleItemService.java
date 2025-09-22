@@ -40,7 +40,6 @@ import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
-import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.repository.UserAccountRepository;
 import sit.int202.ecommerce.modules.user.service.UserService;
@@ -60,7 +59,6 @@ public class SaleItemService {
     private final BrandMapper brandMapper;
     private final FileServiceImpl fileService;
     private final FileRepository fileRepository;
-    private final UserAccountRepository userAccountRepository;
     private final EntityManager em;
     private final UserService userService;
 
