@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -60,20 +61,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                                .requestMatchers("/v2/auth/register", "/v2/auth/verify-email", "/v2/auth/authenticate").permitAll()
-                                .requestMatchers(
-                                        "/v1/swagger-ui/**",
-                                        "/v1/api-docs/**",
-                                        "/v1/swagger-resources/**",
-                                        "/v1/webjars/**",
-                                        "/v1/sale-items/**",
-                                        "/v2/sale-items",
-                                        "/v2/sale-items/storage-sizes",
-                                        "/v2/sale-items/{id}",
-                                        "/v1/brands/**"
-                                ).permitAll()
-                                .anyRequest().authenticated()
-//                            .anyRequest().permitAll()
+                        .requestMatchers("/v2/auth/register", "/v2/auth/verify-email", "/v2/auth/authenticate").permitAll()
+                        .requestMatchers("/v1/swagger-ui/**", "/v1/api-docs/**", "/v1/swagger-resources/**", "/v1/webjars/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/sale-items","/v2/sale-items", "/v2/sale-items/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/brands/**").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
