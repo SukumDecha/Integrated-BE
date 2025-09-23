@@ -81,18 +81,21 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-                    # Create directory if not exists
-                    mkdir -p ~/integrated-deployment
+            # Create directory if not exists
+            mkdir -p ~/integrated-deployment
                     
-                    # Stop and remove only backend-related containers
-                    cd ~/integrated-deployment
-            #          docker-compose stop backend mysql || true
-                    docker-compose down -v || true
-                    docker-compose rm -f backend mysql || true
+            # Stop and remove only backend-related containers
+            cd ~/integrated-deployment
+
+            # docker-compose stop backend mysql || true
+
+            docker-compose down -v || true
+            docker-compose rm -f backend mysql || true
             
             # Remove old images
-                    docker rmi integrated-mysql:latest || true
-                    docker rmi integrated-be:latest || true
+            docker rmi integrated-mysql:latest || true
+            docker rmi integrated-be:latest || true
+            
             #          docker image prune -f
 
       - name: Copy files to VM
@@ -131,12 +134,8 @@ jobs:
             docker network create integrated-network 2>/dev/null || true
             docker volume create backend_uploads 2>/dev/null || true
             
-            # Create network and volumes if they don't exist
-            docker network create integrated-network || true
-            docker volume create backend_uploads || true
-            
             # Start only backend services (mysql + backend)
-            docker-compose up -d mysql backend
+            docker-compose up -d --build mysql backend
             
             # Wait for backend health check
             sleep 30
