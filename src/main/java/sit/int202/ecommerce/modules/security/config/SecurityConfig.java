@@ -63,7 +63,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/v2/auth/register", "/v2/auth/verify-email", "/v2/auth/authenticate").permitAll()
                         .requestMatchers("/v1/swagger-ui/**", "/v1/api-docs/**", "/v1/swagger-resources/**", "/v1/webjars/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/v1/sale-items","/v2/sale-items", "/v2/sale-items/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/sale-items","/v1/sale-items/**","/v2/sale-items", "/v2/sale-items/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/brands/**").permitAll()
                         .anyRequest().authenticated()
                 )
