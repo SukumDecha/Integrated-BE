@@ -28,7 +28,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SaleItemV2Controller {
     private final SaleItemService saleItemService;
-    private final ObjectMapper objectMapper;
 
     @Operation(summary = "Get all sale items with pagination, brand filter, sorting")
     @GetMapping

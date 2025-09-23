@@ -81,21 +81,19 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            # Create directory if not exists
-            mkdir -p ~/integrated-deployment
+             # Create directory if not exists
+            mkdir -p ~/integrated-deployment/backend
                     
             # Stop and remove only backend-related containers
-            cd ~/integrated-deployment
-
-            # docker-compose stop backend mysql || true
-
-            docker-compose down -v || true
+            cd ~/integrated-deployment/backend
+            
+            docker-compose stop backend mysql || true
             docker-compose rm -f backend mysql || true
             
             # Remove old images
             docker rmi integrated-mysql:latest || true
             docker rmi integrated-be:latest || true
-            
+
             #          docker image prune -f
 
       - name: Copy files to VM
@@ -105,7 +103,7 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           source: "integrated-be.tar.gz,docker-compose.yml,db/"
-          target: "~/integrated-deployment/"
+          target: "~/integrated-deployment/backend/"
 
       - name: Deploy on VM
         uses: appleboy/ssh-action@v1.0.3
@@ -114,7 +112,7 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd ~/integrated-deployment
+            cd ~/integrated-deployment/backend
             
             # Load Docker image
             docker load < integrated-be.tar.gz
