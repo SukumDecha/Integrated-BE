@@ -44,12 +44,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     System.out.println("[JWT Filter] ⚠️ Authentication ไม่ใช่ UsernamePasswordAuthenticationToken");
                 }
             }
+            filterChain.doFilter(request, response);
         } catch (Exception e) {
             System.out.println("[JWT Filter] ⚠️ ERROR in filter: " + e.getMessage());
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired JWT token");
         }
-
-        filterChain.doFilter(request, response);
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
