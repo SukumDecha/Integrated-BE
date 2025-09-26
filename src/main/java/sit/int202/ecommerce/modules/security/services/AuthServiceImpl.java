@@ -160,6 +160,13 @@ public class AuthServiceImpl implements AuthService {
         cookie.setSecure(false); // Change to true in production
         cookie.setPath("/");
         response.addCookie(cookie);
+
+        String sameSite = String.format(
+                "refresh_token=%s; Path=/; HttpOnly; SameSite=Strict; Secure",
+                newRefreshToken
+        );
+        response.addHeader("Set-Cookie", sameSite);
+
     }
 
     private boolean isValidEmail(String email) {
