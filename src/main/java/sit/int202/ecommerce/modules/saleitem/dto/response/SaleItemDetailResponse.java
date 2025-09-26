@@ -19,6 +19,7 @@ public class SaleItemDetailResponse {
     private Integer quantity;
     private Integer storageGb;
     private String color;
+    private SellerSummaryResponse seller;
 
     private List<FileResponse> saleItemImages;
     private Instant createdOn;
