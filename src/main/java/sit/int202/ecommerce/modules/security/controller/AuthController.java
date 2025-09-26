@@ -59,6 +59,12 @@ public class AuthController {
         cookie.setPath("/");
         response.addCookie(cookie);
 
+        String sameSite = String.format(
+                "refresh_token=%s; Path=/; HttpOnly; SameSite=Strict; Secure",
+                refreshToken
+        );
+        response.addHeader("Set-Cookie", sameSite);
+
         return ResponseEntity.ok(tokenResponse);
     }
 
@@ -126,6 +132,10 @@ public class AuthController {
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         response.addCookie(cookie);
+
+        String sameSite = "refresh_token=null; Path=/; HttpOnly; Max-Age=0; SameSite=Strict; Secure";
+        response.addHeader("Set-Cookie", sameSite);
+
 
         return ResponseEntity.ok().body("Logged out successfully");
     }
