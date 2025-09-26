@@ -63,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (!user.isActive()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You need to activate your account before signing in.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "You need to activate your account before signing in.");
         }
 
         UserResponse userResponse = userMapper.toUserResponse(user);
