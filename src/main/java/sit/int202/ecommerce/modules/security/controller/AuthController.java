@@ -35,7 +35,7 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
 
-    @PostMapping("/authenticate")
+    @PostMapping("/login")
     @Operation(
             summary = "User login",
             description = "Authenticate user and return access and refresh tokens"
