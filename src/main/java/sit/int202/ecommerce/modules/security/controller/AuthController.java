@@ -53,7 +53,7 @@ public class AuthController {
 
         TokenResponse tokenResponse = TokenResponse.builder().access_token(accessToken).build();
 
-        Cookie cookie = new Cookie("refreshToken", refreshToken);
+        Cookie cookie = new Cookie("refresh_token", refreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(false); // Change to true in production
         cookie.setPath("/");
