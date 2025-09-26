@@ -146,7 +146,7 @@ public class AuthServiceImpl implements AuthService {
     private String extractRefreshToken(HttpServletRequest request) {
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
-                if ("refreshToken".equals(cookie.getName())) {
+                if ("refresh_token".equals(cookie.getName())) {
                     return cookie.getValue();
                 }
             }
@@ -155,7 +155,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void updateRefreshTokenCookie(HttpServletResponse response, String newRefreshToken) {
-        Cookie cookie = new Cookie("refreshToken", newRefreshToken);
+        Cookie cookie = new Cookie("refresh_token", newRefreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(false); // Change to true in production
         cookie.setPath("/");
