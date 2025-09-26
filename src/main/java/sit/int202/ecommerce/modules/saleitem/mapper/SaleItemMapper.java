@@ -11,6 +11,7 @@ import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
+import sit.int202.ecommerce.modules.saleitem.dto.response.SellerSummaryResponse;
 import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 
 import java.util.Comparator;
@@ -30,6 +31,14 @@ public class SaleItemMapper {
         if (saleItem.getBrand() != null) {
             dto.setBrandName(saleItem.getBrand().getName());
         }
+
+        if (saleItem.getSeller() != null) {
+            SellerSummaryResponse sellerDto = new SellerSummaryResponse();
+            sellerDto.setId(saleItem.getSeller().getId());
+            sellerDto.setNickname(saleItem.getSeller().getNickname());
+            dto.setSeller(sellerDto);
+        }
+
 
         List<FileEntity> files = fileService.getFilesByReference("SALE_ITEM", saleItem.getId());
         if (!files.isEmpty()) {
