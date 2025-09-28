@@ -1,0 +1,80 @@
+package sit.int202.ecommerce.modules.order.mapper;
+
+import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Component;
+import sit.int202.ecommerce.modules.file.mapper.FileMapper;
+import sit.int202.ecommerce.modules.file.model.FileEntity;
+import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
+import sit.int202.ecommerce.modules.order.dto.request.OrderItemRequest;
+import sit.int202.ecommerce.modules.order.dto.request.OrderRequest;
+import sit.int202.ecommerce.modules.order.dto.response.OrderItemResponse;
+import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
+import sit.int202.ecommerce.modules.order.model.Order;
+import sit.int202.ecommerce.modules.order.model.OrderItem;
+import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
+import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
+import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
+import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryResponse;
+import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
+import sit.int202.ecommerce.modules.saleitem.dto.response.SellerSummaryResponse;
+import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
+import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
+import sit.int202.ecommerce.modules.user.mapper.UserMapper;
+
+import java.util.Comparator;
+import java.util.List;
+
+@Component
+@RequiredArgsConstructor
+public class OrderMapper {
+
+    private final ModelMapper modelMapper;
+    private final UserMapper userMapper;
+
+
+    public OrderItemResponse toOrderItemResponse(OrderItem orderItem) {
+        OrderItemResponse dto = modelMapper.map(orderItem, OrderItemResponse.class);
+        dto.setSaleItemId(orderItem.getSaleItem().getId());
+
+        return dto;
+    }
+
+    public OrderResponse toOrderResponse(Order order) {
+        OrderResponse orderResponse = modelMapper.map(order, OrderResponse.class);
+        orderResponse.setBuyerId(order.getBuyer().getId());
+
+        UserResponse seller = userMapper.toUserResponse(order.getSeller());
+        orderResponse.setSeller(seller);
+
+        if (order.getOrderDate() != null) {
+            orderResponse.setOrderDate(order.getOrderDate().toString());
+        }
+
+        var orderItems = order.getOrderItems().stream()
+                .sorted(Comparator.comparingInt(i -> i.getSaleItem().getId()))
+                .map(this::toOrderItemResponse)
+                .toList();
+
+        orderResponse.setOrderItems(orderItems);
+
+        return orderResponse;
+    }
+
+    public Order toOrderEntity(OrderRequest request) {
+        Order order = new Order();
+        order.setShippingAddress(request.getShippingAddress());
+        order.setOrderNote(request.getOrderNote());
+        order.setOrderDate(request.getOrderDate().atStartOfDay().toInstant(java.time.ZoneOffset.UTC));
+        order.setStatus(request.getOrderStatus());
+
+        return order;
+    }
+
+    public OrderItem toOrderItemEntity(Order order, OrderItemRequest orderItemRequest) {
+        OrderItem orderItem = modelMapper.map(orderItemRequest, OrderItem.class);
+
+        orderItem.setOrder(order);
+        return orderItem;
+    }
+}

@@ -1,0 +1,127 @@
+package sit.int202.ecommerce.modules.order.service;
+
+import jakarta.persistence.EntityManager;
+import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import sit.int202.ecommerce.common.dto.PaginateResponse;
+import sit.int202.ecommerce.common.dto.request.PaginationRequest;
+import sit.int202.ecommerce.common.exceptions.BadRequestException;
+import sit.int202.ecommerce.common.exceptions.ForbiddenException;
+import sit.int202.ecommerce.common.utils.PaginationUtils;
+import sit.int202.ecommerce.modules.order.dto.request.OrderRequest;
+import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
+import sit.int202.ecommerce.modules.order.mapper.OrderMapper;
+import sit.int202.ecommerce.modules.order.model.Order;
+import sit.int202.ecommerce.modules.order.model.OrderItem;
+import sit.int202.ecommerce.modules.order.repository.OrderRepository;
+import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
+import sit.int202.ecommerce.modules.security.model.UserPrincipal;
+import sit.int202.ecommerce.modules.user.model.UserAccount;
+import sit.int202.ecommerce.modules.user.model.UserAccountType;
+import sit.int202.ecommerce.modules.user.repository.UserAccountRepository;
+
+import java.util.List;
+import java.util.Objects;
+
+@Service
+@AllArgsConstructor
+public class OrderServiceImpl implements OrderService {
+
+    private final OrderRepository orderRepository;
+    private final UserAccountRepository userAccountRepository;
+    private final SaleItemRepository saleItemRepository;
+
+    private final OrderMapper orderMapper;
+
+    private final EntityManager entityManager;
+
+    @Override
+    public OrderResponse placeOrder(OrderRequest orderRequest) {
+        // Implementation for placing an order
+        Order order = orderMapper.toOrderEntity(orderRequest);
+
+        UserAccount buyer = userAccountRepository.findById(orderRequest.getBuyerId())
+                .orElseThrow(() -> new BadRequestException("User not found with id: " + orderRequest.getBuyerId()));
+        order.setBuyer(buyer);
+
+        UserAccount seller = userAccountRepository.findById(orderRequest.getSellerId())
+                .orElseThrow(() -> new BadRequestException("User not found with id: " + orderRequest.getSellerId()));
+        order.setSeller(seller);
+
+        if (Objects.equals(buyer.getId(), seller.getId())) {
+            throw new BadRequestException("Buyer and Seller cannot be the same user.");
+        }
+
+        List<OrderItem> orderItems = orderRequest.getOrderItems().stream()
+                .map(orderItemRequest -> {
+                    OrderItem orderItem = orderMapper.toOrderItemEntity(order, orderItemRequest);
+
+                    // Validate SaleItem existence
+                    var saleItem = saleItemRepository.findById(orderItemRequest.getSaleItemId())
+                            .orElseThrow(() -> new BadRequestException("SaleItem not found with id: " + orderItemRequest.getSaleItemId()));
+
+                    orderItem.setSaleItem(saleItem);
+                    orderItem.setOrder(order);
+                    orderItem.setBuyer(buyer);
+                    return orderItem;
+                }).toList();
+
+        order.setOrderItems(orderItems);
+
+        orderRepository.saveAndFlush(order);
+
+        return orderMapper.toOrderResponse(order);
+    }
+
+    @Override
+    public OrderResponse findOrderById(Integer orderId) {
+        return orderRepository.findById(orderId)
+                .map(orderMapper::toOrderResponse)
+                .orElseThrow(() -> new BadRequestException("Order not found with id: " + orderId));
+    }
+
+    @Override
+    public PaginateResponse<OrderResponse> getOrdersByBuyerId(Integer buyerId, UserPrincipal currentUser, PaginationRequest pagination) {
+        if (!buyerId.equals(currentUser.getId())) {
+            throw new ForbiddenException("Access denied: Buyer ID mismatch.");
+        }
+        Pageable pageable = PaginationUtils.buildPageable(pagination);
+        Specification<Order> specification = (root, query, criteriaBuilder) ->
+                criteriaBuilder.or(
+                        criteriaBuilder.equal(root.get("buyer").get("id"), buyerId)
+                );
+
+        Page<Order> orderPage = orderRepository.findAll(specification, pageable);
+        Page<OrderResponse> orderResponsePage = orderPage.map(orderMapper::toOrderResponse);
+
+        return PaginationUtils.toPaginateResponse(orderResponsePage);
+    }
+
+    @Override
+    public PaginateResponse<OrderResponse> getOrdersBySellerId(Integer sellerId, UserPrincipal currentUser, PaginationRequest pagination) {
+        if (!sellerId.equals(currentUser.getId())) {
+            throw new ForbiddenException("Access denied: Seller ID mismatch.");
+        }
+
+        UserAccount userAccount = userAccountRepository.findById(sellerId)
+                .orElseThrow(() -> new BadRequestException("User not found with id: " + sellerId));
+
+        if (userAccount.getType() != UserAccountType.SELLER) {
+            throw new ForbiddenException("Access denied: User is not a seller.");
+        }
+
+        Pageable pageable = PaginationUtils.buildPageable(pagination);
+        Specification<Order> specification = (root, query, criteriaBuilder) ->
+                criteriaBuilder.or(
+                        criteriaBuilder.equal(root.get("seller").get("id"), sellerId)
+                );
+
+        Page<Order> orderPage = orderRepository.findAll(specification, pageable);
+        Page<OrderResponse> orderResponsePage = orderPage.map(orderMapper::toOrderResponse);
+
+        return PaginationUtils.toPaginateResponse(orderResponsePage);
+    }
+}

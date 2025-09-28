@@ -113,16 +113,14 @@ CREATE TABLE IF NOT EXISTS user_account (
     updatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
 
-
 DROP TABLE IF EXISTS saleItem;
 
 -- สร้างตาราง saleItem ใหม่พร้อม sellerId
 CREATE TABLE IF NOT EXISTS saleItem (
-                                        id INT AUTO_INCREMENT PRIMARY KEY,
-
-                                        brandId INT NOT NULL,
-                                        sellerId INT NOT NULL,
-                                        model VARCHAR(60) NOT NULL CHECK (TRIM(model) <> ''),
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    brandId INT NOT NULL,
+    sellerId INT NOT NULL,
+    model VARCHAR(60) NOT NULL CHECK (TRIM(model) <> ''),
     description TEXT NOT NULL CHECK (TRIM(description) <> ''),
     price INT NOT NULL,
     ramGb INT,
@@ -215,6 +213,44 @@ CREATE TABLE IF NOT EXISTS file_metadata (
     createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
+
+-- สร้างตาราง order
+CREATE TABLE IF NOT EXISTS `order` (
+                                       id INT AUTO_INCREMENT PRIMARY KEY,
+                                       buyerId INT NOT NULL,
+                                       sellerId INT NOT NULL,
+
+                                       shippingAddress TEXT NOT NULL CHECK (TRIM(shippingAddress) <> ''),
+    orderNote TEXT CHECK (orderNote IS NULL OR TRIM(orderNote) <> ''),
+
+    status ENUM('COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'COMPLETED',
+
+
+    orderDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (buyerId) REFERENCES user_account(id) ON DELETE CASCADE,
+    FOREIGN KEY (sellerId) REFERENCES user_account(id) ON DELETE CASCADE
+    );
+
+-- สร้างตาราง order item
+CREATE TABLE IF NOT EXISTS orderItem (
+    `no` INT AUTO_INCREMENT PRIMARY KEY,
+    orderId INT NOT NULL,
+    buyerId INT NOT NULL,
+    saleItemId INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    price INT NOT NULL,
+    description TEXT CHECK (description IS NULL OR TRIM(description) <> ''),
+
+    createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (orderId) REFERENCES `order`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (buyerId) REFERENCES user_account(id) ON DELETE CASCADE,
+    FOREIGN KEY (saleItemId) REFERENCES saleItem(id) ON DELETE CASCADE
+);
 
 
 
