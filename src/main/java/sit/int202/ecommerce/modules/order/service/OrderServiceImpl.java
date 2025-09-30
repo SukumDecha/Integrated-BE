@@ -10,6 +10,7 @@ import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.common.dto.request.PaginationRequest;
 import sit.int202.ecommerce.common.exceptions.BadRequestException;
 import sit.int202.ecommerce.common.exceptions.ForbiddenException;
+import sit.int202.ecommerce.common.exceptions.ResourceConflictException;
 import sit.int202.ecommerce.common.utils.PaginationUtils;
 import sit.int202.ecommerce.modules.order.dto.request.OrderRequest;
 import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
@@ -62,6 +63,14 @@ public class OrderServiceImpl implements OrderService {
                     // Validate SaleItem existence
                     var saleItem = saleItemRepository.findById(orderItemRequest.getSaleItemId())
                             .orElseThrow(() -> new BadRequestException("SaleItem not found with id: " + orderItemRequest.getSaleItemId()));
+
+                    if (!Objects.equals(saleItem.getSeller().getId(), seller.getId())) {
+                        throw new BadRequestException("SaleItem id: " + orderItemRequest.getSaleItemId() + " does not belong to Seller id: " + seller.getId());
+                    }
+
+                    if (saleItem.getQuantity() < orderItemRequest.getQuantity()) {
+                        throw new ResourceConflictException("Insufficient stock for SaleItem id: " + orderItemRequest.getSaleItemId());
+                    }
 
                     orderItem.setSaleItem(saleItem);
                     orderItem.setOrder(order);
