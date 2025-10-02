@@ -39,7 +39,6 @@ public class SaleItemMapper {
             dto.setSeller(sellerDto);
         }
 
-
         List<FileEntity> files = fileService.getFilesByReference("SALE_ITEM", saleItem.getId());
         if (!files.isEmpty()) {
             dto.setSaleItemImages(

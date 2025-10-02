@@ -56,6 +56,10 @@ public class OrderServiceImpl implements OrderService {
             throw new BadRequestException("Buyer and Seller cannot be the same user.");
         }
 
+        if (seller.getType() != UserAccountType.SELLER) {
+            throw new BadRequestException("The specified sellerId does not belong to a seller.");
+        }
+
         List<OrderItem> orderItems = orderRequest.getOrderItems().stream()
                 .map(orderItemRequest -> {
                     OrderItem orderItem = orderMapper.toOrderItemEntity(order, orderItemRequest);
