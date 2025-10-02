@@ -1,6 +1,7 @@
 package sit.int202.ecommerce.modules.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -69,6 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/v1/swagger-ui/**", "/v1/api-docs/**", "/v1/swagger-resources/**", "/v1/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/sale-items","/v1/sale-items/**","/v2/sale-items", "/v2/sale-items/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/brands/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
@@ -87,10 +89,12 @@ public class SecurityConfig {
             response.setContentType("application/json");
             ErrorResponse error = ErrorResponse.builder()
                     .status(HttpStatus.UNAUTHORIZED.value())
-                    .errorMessage("Invalid or expired JWT token")
+                    .errorMessage(authException.getMessage())
                     .path(request.getRequestURI())
                     .build();
-            new ObjectMapper().writeValue(response.getOutputStream(), error);
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            objectMapper.writeValue(response.getOutputStream(), error);
         };
     }
 

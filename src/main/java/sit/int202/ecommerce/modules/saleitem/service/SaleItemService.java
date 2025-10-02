@@ -251,7 +251,7 @@ public class SaleItemService {
 
     @Transactional
     public PaginateResponse<SaleItemDetailResponse> getSaleItems(SaleItemPaginationRequest request) {
-        Pageable pageable = buildPageable(request);
+        Pageable pageable = PaginationUtils.buildPageable(request);
         Specification<SaleItem> spec = buildSpecification(request);
 
         Page<SaleItem> saleItems;
@@ -293,22 +293,6 @@ public class SaleItemService {
         });
 
         return storageSizes;
-    }
-
-    private Pageable buildPageable(SaleItemPaginationRequest request) {
-        List<Sort.Order> orders = new ArrayList<>();
-
-        if (request.getSortBy() != null && !request.getSortBy().isBlank()) {
-            orders.add(new Sort.Order(
-                    Sort.Direction.fromString(request.getSortDirection()),
-                    request.getSortBy()
-            ));
-        }
-
-        orders.add(Sort.Order.asc("createdOn"));
-        orders.add(Sort.Order.asc("id"));
-
-        return PageRequest.of(request.getPage(), request.getSize(), Sort.by(orders));
     }
 
     private Specification<SaleItem> buildSpecification(SaleItemPaginationRequest request) {
@@ -422,7 +406,7 @@ public class SaleItemService {
         }
 
         // ดึงข้อมูล
-        Pageable pageable = buildPageable(request);
+        Pageable pageable = PaginationUtils.buildPageable(request);
         Specification<SaleItem> spec = (root, query, cb) -> cb.equal(root.get("seller").get("id"), sellerId);
         Page<SaleItem> saleItems = saleItemRepository.findAll(spec, pageable);
         Page<SaleItemDetailResponse> dtoPage = saleItems.map(saleItemMapper::toDetailResponse);

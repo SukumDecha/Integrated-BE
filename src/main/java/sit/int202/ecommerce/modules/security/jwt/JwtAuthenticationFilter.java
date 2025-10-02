@@ -29,26 +29,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
-
-        String token = getTokenFromRequest(request);
-
         try {
+            String token = getTokenFromRequest(request);
+
             if (token != null && tokenProvider.validateAccessToken(token)) {
                 Authentication authentication = tokenProvider.getAuthentication(token);
 
                 if (authentication instanceof UsernamePasswordAuthenticationToken authToken) {
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                     System.out.println("[JWT Filter] SecurityContextHolder updated ✅");
                 } else {
                     System.out.println("[JWT Filter] ⚠️ Authentication ไม่ใช่ UsernamePasswordAuthenticationToken");
                 }
             }
-            filterChain.doFilter(request, response);
-        } catch (Exception e) {
-            System.out.println("[JWT Filter] ⚠️ ERROR in filter: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired JWT token");
+            // If token is null or invalid, just continue without setting authentication
+            // Spring Security will handle the unauthorized access later
+
+        } catch (Exception ex) {
+            System.out.println("[JWT Filter] Error processing JWT token: " + ex.getMessage());
+            // Clear security context on any exception
+            SecurityContextHolder.clearContext();
         }
+
+        filterChain.doFilter(request, response);
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
