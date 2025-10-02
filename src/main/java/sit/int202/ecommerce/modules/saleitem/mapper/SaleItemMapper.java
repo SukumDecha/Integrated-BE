@@ -53,7 +53,14 @@ public class SaleItemMapper {
     }
 
     public SaleItemGalleryResponse toGalleryResponse(SaleItem saleItem) {
-        return modelMapper.map(saleItem, SaleItemGalleryResponse.class);
+        var dto = modelMapper.map(saleItem, SaleItemGalleryResponse.class);
+        if (saleItem.getSeller() != null) {
+            SellerSummaryResponse sellerDto = new SellerSummaryResponse();
+            sellerDto.setId(saleItem.getSeller().getId());
+            sellerDto.setNickname(saleItem.getSeller().getNickname());
+            dto.setSeller(sellerDto);
+        }
+        return dto;
     }
 
     public SaleItemListResponse toListResponse(SaleItem saleItem) {
