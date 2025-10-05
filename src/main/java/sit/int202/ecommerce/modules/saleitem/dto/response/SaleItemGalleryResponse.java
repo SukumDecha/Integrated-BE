@@ -11,4 +11,6 @@ public class SaleItemGalleryResponse {
     private Integer ramGb;
     private Integer storageGb;
     private String color;
+    private SellerSummaryResponse seller;
+    private Integer quantity;
 }

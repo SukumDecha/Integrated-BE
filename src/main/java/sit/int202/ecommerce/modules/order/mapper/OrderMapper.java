@@ -3,27 +3,16 @@ package sit.int202.ecommerce.modules.order.mapper;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
-import sit.int202.ecommerce.modules.file.mapper.FileMapper;
-import sit.int202.ecommerce.modules.file.model.FileEntity;
-import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
 import sit.int202.ecommerce.modules.order.dto.request.OrderItemRequest;
 import sit.int202.ecommerce.modules.order.dto.request.OrderRequest;
 import sit.int202.ecommerce.modules.order.dto.response.OrderItemResponse;
 import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
 import sit.int202.ecommerce.modules.order.model.Order;
 import sit.int202.ecommerce.modules.order.model.OrderItem;
-import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
-import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
-import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
-import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryResponse;
-import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
-import sit.int202.ecommerce.modules.saleitem.dto.response.SellerSummaryResponse;
-import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 
 import java.util.Comparator;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
