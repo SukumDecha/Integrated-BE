@@ -18,5 +18,5 @@ app:
     allowed-origin: *
   file:
     upload-dir: ${user.dir}/uploads
-  frontend-url: http://intproj24.sit.kmutt.ac.th/ssa1
-  backend-url: http://intproj24.sit.kmutt.ac.th/ssa1
+  frontend-url: https://intproj24.sit.kmutt.ac.th/ssa1
+  backend-url: https://intproj24.sit.kmutt.ac.th/ssa1

@@ -35,7 +35,7 @@ app:
 
 jwt:
   secret: 73c124a92aae821f65e6281c3e38aa3b
-  issuer: http://intproj24.sit.kmutt.ac.th/ssal/
+  issuer: https://intproj24.sit.kmutt.ac.th/ssal/
 #logging:
 #  level:
 #    root: DEBUG
