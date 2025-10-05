@@ -10,7 +10,7 @@ public interface OrderService {
 
     OrderResponse placeOrder(OrderRequest orderRequest);
 
-    OrderResponse findOrderById(Integer orderId);
+    OrderResponse findOrderById(UserPrincipal currentUser, Integer orderId);
 
     PaginateResponse<OrderResponse> getOrdersByBuyerId(Integer buyerId, UserPrincipal currentUser, PaginationRequest pagination);
     PaginateResponse<OrderResponse> getOrdersBySellerId(Integer sellerId, UserPrincipal currentUser, PaginationRequest pagination);
