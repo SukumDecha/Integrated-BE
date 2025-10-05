@@ -66,8 +66,10 @@ public class OrderController {
                     )
             }
     )
-    public OrderResponse findOrderById(@PathVariable Integer id) {
-        return orderService.findOrderById(id);
+    public OrderResponse findOrderById(
+            @AuthenticationPrincipal UserPrincipal currentUser,
+            @PathVariable Integer id) {
+        return orderService.findOrderById(currentUser, id);
     }
 
     @GetMapping("/v2/users/{buyerId}/orders")
