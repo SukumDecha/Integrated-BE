@@ -143,6 +143,8 @@
 #
 #            # Clean up old images
 ##          docker image prune -f
+
+
 name: Deploy Backend
 
 on:
@@ -196,10 +198,10 @@ jobs:
           # Configure IPsec
           sudo bash -c 'cat > /etc/ipsec.conf << EOF
           config setup
+              charondebug="ike 2, knl 2, cfg 2, net 2, esp 2, dmn 2, mgr 2"
 
           conn L2TP-PSK
               authby=secret
-              pfs=no
               auto=add
               keyingtries=3
               rekey=no
@@ -211,7 +213,7 @@ jobs:
               right=vpn.kmutt.ac.th
               rightprotoport=17/1701
               ike=3des-sha1-modp1024!
-              phase2alg=3des-sha1!
+              esp=3des-sha1!
           EOF'
 
           # Configure IPsec secrets (PSK)
@@ -252,24 +254,70 @@ jobs:
 
       - name: Connect to L2TP/IPsec VPN
         run: |
-          # Start IPsec
-          sudo ipsec start
+          # Restart IPsec to ensure clean state
+          sudo ipsec stop || true
           sleep 2
+          sudo ipsec start
+          sleep 3
+          
+          # Verify IPsec configuration
+          sudo ipsec statusall
           
           # Bring up the IPsec connection
+          echo "Starting IPsec connection..."
           sudo ipsec up L2TP-PSK
           sleep 5
           
-          # Start xl2tpd
+          # Verify IPsec is up
+          sudo ipsec status
+          
+          # Restart xl2tpd to ensure clean state
+          sudo systemctl stop xl2tpd || true
           sudo systemctl start xl2tpd
-          sleep 2
+          sleep 3
           
           # Connect L2TP
+          echo "Starting L2TP connection..."
           sudo bash -c 'echo "c kmutt" > /var/run/xl2tpd/l2tp-control'
-          sleep 10
           
-          # Verify connection
-          ip addr show ppp0 || echo "VPN connection may still be establishing..."
+          # Wait for connection to establish
+          echo "Waiting for VPN connection to establish..."
+          for i in {1..30}; do
+            if ip addr show ppp0 2>/dev/null; then
+              echo "VPN connection established successfully!"
+              ip addr show ppp0
+              ip route
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          # Final verification
+          if ! ip addr show ppp0 2>/dev/null; then
+            echo "ERROR: VPN connection failed to establish"
+            echo "IPsec status:"
+            sudo ipsec statusall
+            echo "xl2tpd logs:"
+            sudo journalctl -u xl2tpd -n 50 --no-pager
+            echo "System logs:"
+            sudo dmesg | tail -50
+            exit 1
+          fi
+
+      - name: Verify VPN Connection and VM Accessibility
+        run: |
+          echo "Verifying VPN connection..."
+          ip addr show ppp0
+          
+          echo "Testing VM connectivity..."
+          ping -c 3 ${{ secrets.VM_HOST }} || echo "Warning: Cannot ping VM, but SSH might still work"
+          
+          echo "Testing SSH connectivity..."
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+            -i <(echo "${{ secrets.VM_SSH_KEY }}") \
+            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+            "echo 'SSH connection successful'" || exit 1
 
       - name: Build Docker image
         run: |
