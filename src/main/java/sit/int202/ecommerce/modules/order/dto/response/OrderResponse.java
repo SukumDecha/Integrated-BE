@@ -10,7 +10,11 @@ import java.util.List;
 public class OrderResponse {
 
     private Integer id;
+
     private Integer buyerId;
+    private UserResponse buyer;
+
+    private Integer sellerId;
     private UserResponse seller;
 
     private String orderDate;

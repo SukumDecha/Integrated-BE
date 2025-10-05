@@ -1,6 +1,7 @@
 package sit.int202.ecommerce.modules.order.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -53,11 +54,11 @@ public class OrderServiceImpl implements OrderService {
         order.setSeller(seller);
 
         if (Objects.equals(buyer.getId(), seller.getId())) {
-            throw new BadRequestException("Buyer and Seller cannot be the same user.");
+            throw new EntityNotFoundException("Buyer and Seller cannot be the same user.");
         }
 
         if (seller.getType() != UserAccountType.SELLER) {
-            throw new BadRequestException("The specified sellerId does not belong to a seller.");
+            throw new EntityNotFoundException("The specified sellerId does not belong to a seller.");
         }
 
         List<OrderItem> orderItems = orderRequest.getOrderItems().stream()
@@ -66,7 +67,7 @@ public class OrderServiceImpl implements OrderService {
 
                     // Validate SaleItem existence
                     var saleItem = saleItemRepository.findById(orderItemRequest.getSaleItemId())
-                            .orElseThrow(() -> new BadRequestException("SaleItem not found with id: " + orderItemRequest.getSaleItemId()));
+                            .orElseThrow(() -> new EntityNotFoundException("SaleItem not found with id: " + orderItemRequest.getSaleItemId()));
 
                     if (!Objects.equals(saleItem.getSeller().getId(), seller.getId())) {
                         throw new BadRequestException("SaleItem id: " + orderItemRequest.getSaleItemId() + " does not belong to Seller id: " + seller.getId());
@@ -86,14 +87,20 @@ public class OrderServiceImpl implements OrderService {
 
         orderRepository.saveAndFlush(order);
 
-        return orderMapper.toOrderResponse(order);
+        return orderMapper.toOrderResponse(order, false);
     }
 
     @Override
-    public OrderResponse findOrderById(Integer orderId) {
-        return orderRepository.findById(orderId)
-                .map(orderMapper::toOrderResponse)
+    public OrderResponse findOrderById(UserPrincipal currentUser, Integer orderId) {
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BadRequestException("Order not found with id: " + orderId));
+
+        if (!Objects.equals(order.getBuyer().getId(), currentUser.getId()) &&
+            !Objects.equals(order.getSeller().getId(), currentUser.getId())) {
+            throw new ForbiddenException("Access denied: You are neither the buyer nor the seller of this order.");
+        }
+
+        return orderMapper.toOrderResponse(order, false);
     }
 
     @Override
@@ -101,6 +108,11 @@ public class OrderServiceImpl implements OrderService {
         if (!buyerId.equals(currentUser.getId())) {
             throw new ForbiddenException("Access denied: Buyer ID mismatch.");
         }
+
+        if (userAccountRepository.findById(buyerId).orElse(null) == null) {
+            throw new EntityNotFoundException("User not found with id: " + buyerId);
+        }
+
         Pageable pageable = PaginationUtils.buildPageable(pagination);
         Specification<Order> specification = (root, query, criteriaBuilder) ->
                 criteriaBuilder.or(
@@ -108,7 +120,9 @@ public class OrderServiceImpl implements OrderService {
                 );
 
         Page<Order> orderPage = orderRepository.findAll(specification, pageable);
-        Page<OrderResponse> orderResponsePage = orderPage.map(orderMapper::toOrderResponse);
+        Page<OrderResponse> orderResponsePage = orderPage.map(
+                order -> orderMapper.toOrderResponse(order, false)
+        );
 
         return PaginationUtils.toPaginateResponse(orderResponsePage);
     }
@@ -133,7 +147,9 @@ public class OrderServiceImpl implements OrderService {
                 );
 
         Page<Order> orderPage = orderRepository.findAll(specification, pageable);
-        Page<OrderResponse> orderResponsePage = orderPage.map(orderMapper::toOrderResponse);
+        Page<OrderResponse> orderResponsePage = orderPage.map(
+                order -> orderMapper.toOrderResponse(order, true)
+        );
 
         return PaginationUtils.toPaginateResponse(orderResponsePage);
     }

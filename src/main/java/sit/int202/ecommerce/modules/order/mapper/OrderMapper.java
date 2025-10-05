@@ -29,12 +29,20 @@ public class OrderMapper {
         return dto;
     }
 
-    public OrderResponse toOrderResponse(Order order) {
+    public OrderResponse toOrderResponse(Order order, boolean includeBuyer) {
         OrderResponse orderResponse = modelMapper.map(order, OrderResponse.class);
-        orderResponse.setBuyerId(order.getBuyer().getId());
 
-        UserResponse seller = userMapper.toUserResponse(order.getSeller());
-        orderResponse.setSeller(seller);
+        if (includeBuyer) {
+            UserResponse buyer = userMapper.toUserResponse(order.getBuyer());
+            orderResponse.setBuyer(buyer);
+
+            orderResponse.setSellerId(order.getSeller().getId());
+        } else {
+            UserResponse seller = userMapper.toUserResponse(order.getSeller());
+            orderResponse.setSeller(seller);
+
+            orderResponse.setBuyerId(order.getBuyer().getId());
+        }
 
         if (order.getOrderDate() != null) {
             orderResponse.setOrderDate(order.getOrderDate().toString());
