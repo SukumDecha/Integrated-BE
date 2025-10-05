@@ -144,7 +144,6 @@
 #            # Clean up old images
 ##          docker image prune -f
 
-
 name: Deploy Backend
 
 on:
@@ -191,29 +190,33 @@ jobs:
       - name: Install L2TP/IPsec VPN packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y strongswan xl2tpd network-manager-l2tp
+          sudo apt-get install -y strongswan xl2tpd ppp
 
       - name: Configure L2TP/IPsec VPN
         run: |
           # Configure IPsec
           sudo bash -c 'cat > /etc/ipsec.conf << EOF
           config setup
-              charondebug="ike 2, knl 2, cfg 2, net 2, esp 2, dmn 2, mgr 2"
+
+          conn %default
+              ikelifetime=60m
+              keylife=20m
+              rekeymargin=3m
+              keyingtries=1
+              keyexchange=ikev1
+              authby=secret
+              ike=aes128-sha1-modp1024,3des-sha1-modp1024!
+              esp=aes128-sha1-modp1024,3des-sha1-modp1024!
 
           conn L2TP-PSK
-              authby=secret
-              auto=add
-              keyingtries=3
-              rekey=no
-              ikelifetime=8h
-              keylife=1h
-              type=transport
+              keyexchange=ikev1
               left=%defaultroute
+              auto=add
+              authby=secret
+              type=transport
               leftprotoport=17/1701
-              right=vpn.kmutt.ac.th
               rightprotoport=17/1701
-              ike=3des-sha1-modp1024!
-              esp=3des-sha1!
+              right=vpn.kmutt.ac.th
           EOF'
 
           # Configure IPsec secrets (PSK)
@@ -223,7 +226,7 @@ jobs:
 
           # Configure xl2tpd
           sudo bash -c 'cat > /etc/xl2tpd/xl2tpd.conf << EOF
-          [lac kmutt]
+          [lac myVPN]
           lns = vpn.kmutt.ac.th
           ppp debug = yes
           pppoptfile = /etc/ppp/options.l2tpd.client
@@ -235,14 +238,16 @@ jobs:
           ipcp-accept-local
           ipcp-accept-remote
           refuse-eap
-          require-chap
+          require-mschap-v2
           noccp
           noauth
-          mtu 1280
-          mru 1280
-          noipdefault
+          logfile /var/log/xl2tpd.log
+          idle 1800
+          mtu 1410
+          mru 1410
           defaultroute
           usepeerdns
+          debug
           connect-delay 5000
           name ${{ secrets.VPN_USERNAME }}
           password ${{ secrets.VPN_PASSWORD }}
@@ -254,54 +259,48 @@ jobs:
 
       - name: Connect to L2TP/IPsec VPN
         run: |
-          # Restart IPsec to ensure clean state
-          sudo ipsec stop || true
-          sleep 2
-          sudo ipsec start
-          sleep 3
+          # Prepare xl2tpd control directory
+          sudo mkdir -p /var/run/xl2tpd
+          sudo touch /var/run/xl2tpd/l2tp-control
           
-          # Verify IPsec configuration
-          sudo ipsec statusall
+          # Restart services
+          echo "Restarting VPN services..."
+          sudo service strongswan restart
+          sudo service xl2tpd restart
+          sudo service ipsec restart
+          sleep 8
           
-          # Bring up the IPsec connection
-          echo "Starting IPsec connection..."
+          # Bring up IPsec connection
+          echo "Bringing up IPsec connection..."
           sudo ipsec up L2TP-PSK
-          sleep 5
+          sleep 8
           
-          # Verify IPsec is up
-          sudo ipsec status
+          # Initiate L2TP connection
+          echo "Initiating L2TP connection..."
+          sudo bash -c 'echo "c myVPN" > /var/run/xl2tpd/l2tp-control'
+          sleep 8
           
-          # Restart xl2tpd to ensure clean state
-          sudo systemctl stop xl2tpd || true
-          sudo systemctl start xl2tpd
-          sleep 3
+          # Check connection
+          echo "Checking VPN connection..."
+          ifconfig
           
-          # Connect L2TP
-          echo "Starting L2TP connection..."
-          sudo bash -c 'echo "c kmutt" > /var/run/xl2tpd/l2tp-control'
-          
-          # Wait for connection to establish
-          echo "Waiting for VPN connection to establish..."
-          for i in {1..30}; do
-            if ip addr show ppp0 2>/dev/null; then
-              echo "VPN connection established successfully!"
-              ip addr show ppp0
-              ip route
-              break
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 2
-          done
-          
-          # Final verification
-          if ! ip addr show ppp0 2>/dev/null; then
-            echo "ERROR: VPN connection failed to establish"
-            echo "IPsec status:"
+          # Verify ppp0 interface exists
+          if ip addr show ppp0 2>/dev/null; then
+            echo "✓ VPN connection established successfully!"
+            ip addr show ppp0
+            ip route | grep ppp0 || true
+          else
+            echo "❌ VPN connection failed - ppp0 interface not found"
+            echo ""
+            echo "=== Diagnostics ==="
+            echo "--- IPsec Status ---"
             sudo ipsec statusall
-            echo "xl2tpd logs:"
-            sudo journalctl -u xl2tpd -n 50 --no-pager
-            echo "System logs:"
-            sudo dmesg | tail -50
+            echo ""
+            echo "--- xl2tpd logs ---"
+            cat /var/log/xl2tpd.log || echo "Log file not found"
+            echo ""
+            echo "--- dmesg ---"
+            dmesg | tail -50
             exit 1
           fi
 
@@ -413,10 +412,8 @@ jobs:
         if: always()
         run: |
           # Disconnect L2TP
-          sudo bash -c 'echo "d kmutt" > /var/run/xl2tpd/l2tp-control' || true
+          sudo bash -c 'echo "d myVPN" > /var/run/xl2tpd/l2tp-control' || true
           sleep 2
           
-          # Stop services
-          sudo systemctl stop xl2tpd || true
-          sudo ipsec down L2TP-PSK || true
-          sudo ipsec stop || true
+          # Disconnect IPsec
+          sudo ipsec down L2TP-PSK || true          sudo ipsec stop || true
