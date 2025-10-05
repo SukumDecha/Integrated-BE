@@ -1,149 +1,3 @@
-#name: Deploy Backend
-#
-#on:
-#  push:
-#    branches: [ main, uat, dev ]
-#  pull_request:
-#    branches: [ main, uat, dev ]
-#
-#env:
-#  REGISTRY: ghcr.io
-#  IMAGE_NAME: ${{ github.repository }}-backend
-#
-#jobs:
-#  build-and-test:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Set up JDK 21
-#        uses: actions/setup-java@v4
-#        with:
-#          java-version: '21'
-#          distribution: 'temurin'
-#
-#      - name: Cache Maven packages
-#        uses: actions/cache@v3
-#        with:
-#          path: ~/.m2
-#          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-#          restore-keys: |
-#            ${{ runner.os }}-m2-
-#
-#      - name: Build application JAR
-#        run: ./mvnw clean package -DskipTests
-#
-#  build-and-deploy:
-#    needs: build-and-test
-#    runs-on: ubuntu-latest
-#    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/uat'
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Install OpenVPN
-#        run: |
-#          sudo apt update
-#          sudo apt install -y openvpn openvpn-systemd-resolved
-#
-#      - name: Connect to VPN
-#        uses: "kota65535/github-openvpn-connect-action@v2"
-#        with:
-#          config_file: .github/workflows/sitst-client.ovpn
-#          username: ${{ secrets.OVPN_USERNAME }}
-#          password: ${{ secrets.OVPN_PASSWORD }}
-#
-#      - name: Build Docker image
-#        run: |
-#          # Decide environment
-#          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-#            PROFILE=prod
-#          elif [ "${{ github.ref }}" = "refs/heads/uat" ]; then
-#            PROFILE=uat
-#          else
-#            PROFILE=dev
-#          fi
-#
-#          echo "Building with profile: $PROFILE"
-#
-#          docker build \
-#            --build-arg SPRING_PROFILES_ACTIVE=$PROFILE \
-#            -t integrated-be:${{ github.sha }} .
-#          docker tag integrated-be:${{ github.sha }} integrated-be:latest
-#
-#      - name: Save Docker image
-#        run: docker save integrated-be:latest | gzip > integrated-be.tar.gz
-#
-#      - name: Deploy to VM
-#        uses: appleboy/ssh-action@v1.0.3
-#        with:
-#          host: ${{ secrets.VM_HOST }}
-#          username: ${{ secrets.VM_USER }}
-#          key: ${{ secrets.VM_SSH_KEY }}
-#          script: |
-#            # Create directory if not exists
-#            mkdir -p ~/integrated-deployment/backend
-#
-#            # Stop and remove only backend-related containers
-#            cd ~/integrated-deployment/backend
-#
-#            docker-compose stop backend mysql || true
-#            docker-compose rm -f backend mysql || true
-#
-#            # Remove old images
-#            docker rmi integrated-mysql:latest || true
-#            docker rmi integrated-be:latest || true
-#
-#            # docker image prune -f
-#
-#      - name: Copy files to VM
-#        uses: appleboy/scp-action@v0.1.7
-#        with:
-#          host: ${{ secrets.VM_HOST }}
-#          username: ${{ secrets.VM_USER }}
-#          key: ${{ secrets.VM_SSH_KEY }}
-#          source: "integrated-be.tar.gz,docker-compose.yml,db/"
-#          target: "~/integrated-deployment/backend/"
-#
-#      - name: Deploy on VM
-#        uses: appleboy/ssh-action@v1.0.3
-#        with:
-#          host: ${{ secrets.VM_HOST }}
-#          username: ${{ secrets.VM_USER }}
-#          key: ${{ secrets.VM_SSH_KEY }}
-#          script: |
-#            cd ~/integrated-deployment/backend
-#
-#            # Load Docker image
-#            docker load < integrated-be.tar.gz
-#            rm integrated-be.tar.gz
-#
-#            # Set environment
-#            # export SPRING_PROFILES_ACTIVE=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-#            if [ "${github.ref}" = "refs/heads/main" ]; then
-#              export SPRING_PROFILES_ACTIVE=prod
-#            elif [ "${github.ref}" = "refs/heads/uat" ]; then
-#              export SPRING_PROFILES_ACTIVE=uat
-#            else
-#              export SPRING_PROFILES_ACTIVE=dev
-#            fi
-#
-#            # Create network and volumes if they don't exist
-#            docker network create integrated-network 2>/dev/null || true
-#            docker volume create backend_uploads 2>/dev/null || true
-#
-#            # Start only backend services (mysql + backend)
-#            docker-compose up -d --build mysql backend
-#
-#            # Wait for backend health check
-#            sleep 30
-#
-#            # Verify backend deployment
-#            docker-compose ps backend mysql
-#
-#            # Clean up old images
-##          docker image prune -f
-
 name: Deploy Backend
 
 on:
@@ -263,11 +117,10 @@ jobs:
           sudo mkdir -p /var/run/xl2tpd
           sudo touch /var/run/xl2tpd/l2tp-control
           
-          # Restart services
+          # Restart services (Ubuntu/Debian use 'ipsec' not 'strongswan')
           echo "Restarting VPN services..."
-          sudo service strongswan restart
+          sudo service ipsec restart || sudo systemctl restart strongswan-starter
           sudo service xl2tpd restart
-          sudo service ipsec restart
           sleep 8
           
           # Bring up IPsec connection
@@ -309,14 +162,27 @@ jobs:
           echo "Verifying VPN connection..."
           ip addr show ppp0
           
+          echo "Adding route to VM network through VPN..."
+          # Get the peer IP from ppp0
+          PEER_IP=$(ip address show dev ppp0 | grep -Po '(?<=peer )(\b([0-9]{1,3}\.){3}[0-9]{1,3}\b)')
+          echo "Peer IP: $PEER_IP"
+          
+          # Add route for VM's network (10.4.84.0/24) through VPN
+          # Adjust the network range if your VM is in a different subnet
+          sudo ip route add 10.4.84.0/24 via $PEER_IP dev ppp0
+          
+          # Alternatively, if you need to route the entire 10.0.0.0/8 network:
+          # sudo ip route add 10.0.0.0/8 via $PEER_IP dev ppp0
+          
+          echo "Current routing table:"
+          ip route
+          
           echo "Testing VM connectivity..."
           ping -c 3 ${{ secrets.VM_HOST }} || echo "Warning: Cannot ping VM, but SSH might still work"
           
           echo "Testing SSH connectivity..."
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
-            -i <(echo "${{ secrets.VM_SSH_KEY }}") \
-            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
-            "echo 'SSH connection successful'" || exit 1
+          timeout 10 nc -zv ${{ secrets.VM_HOST }} 22 || exit 1
+          echo "✓ VM is accessible through VPN"
 
       - name: Build Docker image
         run: |
@@ -416,4 +282,4 @@ jobs:
           sleep 2
           
           # Disconnect IPsec
-          sudo ipsec down L2TP-PSK || true          sudo ipsec stop || true
+          sudo ipsec down L2TP-PSK || true
