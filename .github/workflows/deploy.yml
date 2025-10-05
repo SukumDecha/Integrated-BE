@@ -1,3 +1,148 @@
+#name: Deploy Backend
+#
+#on:
+#  push:
+#    branches: [ main, uat, dev ]
+#  pull_request:
+#    branches: [ main, uat, dev ]
+#
+#env:
+#  REGISTRY: ghcr.io
+#  IMAGE_NAME: ${{ github.repository }}-backend
+#
+#jobs:
+#  build-and-test:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Set up JDK 21
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: '21'
+#          distribution: 'temurin'
+#
+#      - name: Cache Maven packages
+#        uses: actions/cache@v3
+#        with:
+#          path: ~/.m2
+#          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+#          restore-keys: |
+#            ${{ runner.os }}-m2-
+#
+#      - name: Build application JAR
+#        run: ./mvnw clean package -DskipTests
+#
+#  build-and-deploy:
+#    needs: build-and-test
+#    runs-on: ubuntu-latest
+#    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/uat'
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Install OpenVPN
+#        run: |
+#          sudo apt update
+#          sudo apt install -y openvpn openvpn-systemd-resolved
+#
+#      - name: Connect to VPN
+#        uses: "kota65535/github-openvpn-connect-action@v2"
+#        with:
+#          config_file: .github/workflows/sitst-client.ovpn
+#          username: ${{ secrets.OVPN_USERNAME }}
+#          password: ${{ secrets.OVPN_PASSWORD }}
+#
+#      - name: Build Docker image
+#        run: |
+#          # Decide environment
+#          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+#            PROFILE=prod
+#          elif [ "${{ github.ref }}" = "refs/heads/uat" ]; then
+#            PROFILE=uat
+#          else
+#            PROFILE=dev
+#          fi
+#
+#          echo "Building with profile: $PROFILE"
+#
+#          docker build \
+#            --build-arg SPRING_PROFILES_ACTIVE=$PROFILE \
+#            -t integrated-be:${{ github.sha }} .
+#          docker tag integrated-be:${{ github.sha }} integrated-be:latest
+#
+#      - name: Save Docker image
+#        run: docker save integrated-be:latest | gzip > integrated-be.tar.gz
+#
+#      - name: Deploy to VM
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.VM_HOST }}
+#          username: ${{ secrets.VM_USER }}
+#          key: ${{ secrets.VM_SSH_KEY }}
+#          script: |
+#            # Create directory if not exists
+#            mkdir -p ~/integrated-deployment/backend
+#
+#            # Stop and remove only backend-related containers
+#            cd ~/integrated-deployment/backend
+#
+#            docker-compose stop backend mysql || true
+#            docker-compose rm -f backend mysql || true
+#
+#            # Remove old images
+#            docker rmi integrated-mysql:latest || true
+#            docker rmi integrated-be:latest || true
+#
+#            # docker image prune -f
+#
+#      - name: Copy files to VM
+#        uses: appleboy/scp-action@v0.1.7
+#        with:
+#          host: ${{ secrets.VM_HOST }}
+#          username: ${{ secrets.VM_USER }}
+#          key: ${{ secrets.VM_SSH_KEY }}
+#          source: "integrated-be.tar.gz,docker-compose.yml,db/"
+#          target: "~/integrated-deployment/backend/"
+#
+#      - name: Deploy on VM
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.VM_HOST }}
+#          username: ${{ secrets.VM_USER }}
+#          key: ${{ secrets.VM_SSH_KEY }}
+#          script: |
+#            cd ~/integrated-deployment/backend
+#
+#            # Load Docker image
+#            docker load < integrated-be.tar.gz
+#            rm integrated-be.tar.gz
+#
+#            # Set environment
+#            # export SPRING_PROFILES_ACTIVE=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+#            if [ "${github.ref}" = "refs/heads/main" ]; then
+#              export SPRING_PROFILES_ACTIVE=prod
+#            elif [ "${github.ref}" = "refs/heads/uat" ]; then
+#              export SPRING_PROFILES_ACTIVE=uat
+#            else
+#              export SPRING_PROFILES_ACTIVE=dev
+#            fi
+#
+#            # Create network and volumes if they don't exist
+#            docker network create integrated-network 2>/dev/null || true
+#            docker volume create backend_uploads 2>/dev/null || true
+#
+#            # Start only backend services (mysql + backend)
+#            docker-compose up -d --build mysql backend
+#
+#            # Wait for backend health check
+#            sleep 30
+#
+#            # Verify backend deployment
+#            docker-compose ps backend mysql
+#
+#            # Clean up old images
+##          docker image prune -f
 name: Deploy Backend
 
 on:
@@ -41,17 +186,90 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OpenVPN
+      - name: Install L2TP/IPsec VPN packages
         run: |
-          sudo apt update
-          sudo apt install -y openvpn openvpn-systemd-resolved
+          sudo apt-get update
+          sudo apt-get install -y strongswan xl2tpd network-manager-l2tp
 
-      - name: Connect to VPN
-        uses: "kota65535/github-openvpn-connect-action@v2"
-        with:
-          config_file: .github/workflows/sitst-client.ovpn
-          username: ${{ secrets.OVPN_USERNAME }}
-          password: ${{ secrets.OVPN_PASSWORD }}
+      - name: Configure L2TP/IPsec VPN
+        run: |
+          # Configure IPsec
+          sudo bash -c 'cat > /etc/ipsec.conf << EOF
+          config setup
+
+          conn L2TP-PSK
+              authby=secret
+              pfs=no
+              auto=add
+              keyingtries=3
+              rekey=no
+              ikelifetime=8h
+              keylife=1h
+              type=transport
+              left=%defaultroute
+              leftprotoport=17/1701
+              right=vpn.kmutt.ac.th
+              rightprotoport=17/1701
+              ike=3des-sha1-modp1024!
+              phase2alg=3des-sha1!
+          EOF'
+
+          # Configure IPsec secrets (PSK)
+          sudo bash -c 'cat > /etc/ipsec.secrets << EOF
+          : PSK "kmutt.ac.th"
+          EOF'
+
+          # Configure xl2tpd
+          sudo bash -c 'cat > /etc/xl2tpd/xl2tpd.conf << EOF
+          [lac kmutt]
+          lns = vpn.kmutt.ac.th
+          ppp debug = yes
+          pppoptfile = /etc/ppp/options.l2tpd.client
+          length bit = yes
+          EOF'
+
+          # Configure PPP options
+          sudo bash -c 'cat > /etc/ppp/options.l2tpd.client << EOF
+          ipcp-accept-local
+          ipcp-accept-remote
+          refuse-eap
+          require-chap
+          noccp
+          noauth
+          mtu 1280
+          mru 1280
+          noipdefault
+          defaultroute
+          usepeerdns
+          connect-delay 5000
+          name ${{ secrets.VPN_USERNAME }}
+          password ${{ secrets.VPN_PASSWORD }}
+          EOF'
+
+          # Set proper permissions
+          sudo chmod 600 /etc/ipsec.secrets
+          sudo chmod 600 /etc/ppp/options.l2tpd.client
+
+      - name: Connect to L2TP/IPsec VPN
+        run: |
+          # Start IPsec
+          sudo ipsec start
+          sleep 2
+          
+          # Bring up the IPsec connection
+          sudo ipsec up L2TP-PSK
+          sleep 5
+          
+          # Start xl2tpd
+          sudo systemctl start xl2tpd
+          sleep 2
+          
+          # Connect L2TP
+          sudo bash -c 'echo "c kmutt" > /var/run/xl2tpd/l2tp-control'
+          sleep 10
+          
+          # Verify connection
+          ip addr show ppp0 || echo "VPN connection may still be establishing..."
 
       - name: Build Docker image
         run: |
@@ -83,7 +301,7 @@ jobs:
           script: |
             # Create directory if not exists
             mkdir -p ~/integrated-deployment/backend
-                    
+            
             # Stop and remove only backend-related containers
             cd ~/integrated-deployment/backend
             
@@ -119,10 +337,9 @@ jobs:
             rm integrated-be.tar.gz
             
             # Set environment
-            # export SPRING_PROFILES_ACTIVE=${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
-            if [ "${github.ref}" = "refs/heads/main" ]; then
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
               export SPRING_PROFILES_ACTIVE=prod
-            elif [ "${github.ref}" = "refs/heads/uat" ]; then
+            elif [ "${{ github.ref }}" = "refs/heads/uat" ]; then
               export SPRING_PROFILES_ACTIVE=uat
             else
               export SPRING_PROFILES_ACTIVE=dev
@@ -142,4 +359,16 @@ jobs:
             docker-compose ps backend mysql
             
             # Clean up old images
-#          docker image prune -f
+      #          docker image prune -f
+
+      - name: Disconnect VPN
+        if: always()
+        run: |
+          # Disconnect L2TP
+          sudo bash -c 'echo "d kmutt" > /var/run/xl2tpd/l2tp-control' || true
+          sleep 2
+          
+          # Stop services
+          sudo systemctl stop xl2tpd || true
+          sudo ipsec down L2TP-PSK || true
+          sudo ipsec stop || true
