@@ -117,10 +117,10 @@ DROP TABLE IF EXISTS saleItem;
 
 -- สร้างตาราง saleItem ใหม่พร้อม sellerId
 CREATE TABLE IF NOT EXISTS saleItem (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    brandId INT NOT NULL,
-    sellerId INT NOT NULL,
-    model VARCHAR(60) NOT NULL CHECK (TRIM(model) <> ''),
+                                        id INT AUTO_INCREMENT PRIMARY KEY,
+                                        brandId INT NOT NULL,
+                                        sellerId INT NOT NULL,
+                                        model VARCHAR(60) NOT NULL CHECK (TRIM(model) <> ''),
     description TEXT NOT NULL CHECK (TRIM(description) <> ''),
     price INT NOT NULL,
     ramGb INT,
@@ -236,13 +236,13 @@ CREATE TABLE IF NOT EXISTS `order` (
 
 -- สร้างตาราง order item
 CREATE TABLE IF NOT EXISTS orderItem (
-    `no` INT AUTO_INCREMENT PRIMARY KEY,
-    orderId INT NOT NULL,
-    buyerId INT NOT NULL,
-    saleItemId INT NOT NULL,
-    quantity INT NOT NULL DEFAULT 1,
-    price INT NOT NULL,
-    description TEXT CHECK (description IS NULL OR TRIM(description) <> ''),
+                                         `no` INT AUTO_INCREMENT PRIMARY KEY,
+                                         orderId INT NOT NULL,
+                                         buyerId INT NOT NULL,
+                                         saleItemId INT NOT NULL,
+                                         quantity INT NOT NULL DEFAULT 1,
+                                         price INT NOT NULL,
+                                         description TEXT CHECK (description IS NULL OR TRIM(description) <> ''),
 
     createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS orderItem (
     FOREIGN KEY (orderId) REFERENCES `order`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (buyerId) REFERENCES user_account(id) ON DELETE CASCADE,
     FOREIGN KEY (saleItemId) REFERENCES saleItem(id) ON DELETE CASCADE
-);
+    );
 
 
 
@@ -384,15 +384,72 @@ VALUES
     (84, 3, 10, 'A77', 'Budget friendly', 20, 8250, 6.56, 6, 128, 'Ocean Blue'),
     (85, 4, 10, 'Reno6 Pro', 'Classic premium', 7, 16500, 6.55, 12, 256, 'Arctic Blue');
 
--- ช่วยให้ query ORDER BY createdOn เร็วขึ้น
+-- ================================
+-- Table: saleItem
+-- ================================
+
+-- Speeds up JOINs between saleItem and brand using brandId
+CREATE INDEX idx_saleItem_brandId ON saleItem (brandId);
+
+-- Speeds up JOINs between saleItem and user_account (seller) using sellerId
+CREATE INDEX idx_saleItem_sellerId ON saleItem (sellerId);
+
+-- Optimizes filtering and sorting by price (e.g., WHERE price = ? or ORDER BY price)
+CREATE INDEX idx_saleItem_price ON saleItem (price);
+
+-- Improves filtering performance for queries using WHERE color = ?
+CREATE INDEX idx_saleItem_color ON saleItem (color);
+
+-- Composite index for filtering by both ramGb and storageGb (e.g., WHERE ramGb = ? AND storageGb = ?)
+CREATE INDEX idx_saleItem_ram_storage ON saleItem (ramGb, storageGb);
+
+-- Speeds up sorting or filtering with ORDER BY createdOn
 CREATE INDEX idx_saleItem_createdOn ON saleItem (createdOn);
 
--- ช่วยให้ WHERE model LIKE 'xxx%' เร็วขึ้น (เฉพาะ prefix match เท่านั้น)
+-- Improves performance when filtering with model prefix search (e.g., WHERE model LIKE 'iPhone%')
+-- ⚠️ Only effective for prefix matches, not contains or suffix (LIKE '%x' will not use this index)
 CREATE INDEX idx_saleItem_model ON saleItem (model);
 
--- ตาราง brand
+-- ================================
+-- Table: order
+-- ================================
 
--- ช่วยให้ WHERE countryOfOrigin = 'xxx' เร็วขึ้น
+-- Optimizes JOINs or filters using buyerId (e.g., WHERE buyerId = ?)
+CREATE INDEX idx_order_buyerId ON `order` (buyerId);
+
+-- Optimizes JOINs or filters using sellerId (e.g., WHERE sellerId = ?)
+CREATE INDEX idx_order_sellerId ON `order` (sellerId);
+
+-- Improves performance when filtering or sorting by orderDate
+CREATE INDEX idx_order_orderDate ON `order` (orderDate);
+
+-- ================================
+-- Table: orderItem
+-- ================================
+
+-- Improves JOIN performance between orderItem and order using orderId
+CREATE INDEX idx_orderItem_orderId ON orderItem (orderId);
+
+-- Improves JOIN performance between orderItem and saleItem using saleItemId
+CREATE INDEX idx_orderItem_saleItemId ON orderItem (saleItemId);
+
+-- Optimizes filtering of order items by buyerId (e.g., WHERE buyerId = ?)
+CREATE INDEX idx_orderItem_buyerId ON orderItem (buyerId);
+
+-- ================================
+-- Table: brand
+-- ================================
+
+-- Improves filtering and searching by brand name (e.g., WHERE name = ? or name LIKE 'abc%')
+CREATE INDEX idx_brand_name ON brand (name);
+
+-- Speeds up queries filtering by brand origin country (e.g., WHERE countryOfOrigin = 'Japan')
 CREATE INDEX idx_brand_country ON brand (countryOfOrigin);
 
+-- ================================
+-- Table: file_metadata
+-- ================================
+
+-- Composite index for joining or filtering using both refType and refId
+-- Useful for dynamic file attachment system (e.g., WHERE refType = 'PRODUCT' AND refId = 123)
 CREATE INDEX idx_ref_type ON file_metadata(refType, refId);
