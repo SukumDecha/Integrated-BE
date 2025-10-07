@@ -38,56 +38,53 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderMapper orderMapper;
 
-    private final EntityManager entityManager;
-
     @Override
-    public OrderResponse placeOrder(OrderRequest orderRequest) {
-        // Implementation for placing an order
-        Order order = orderMapper.toOrderEntity(orderRequest);
+    public List<OrderResponse> placeOrder(List<OrderRequest> orderRequestList) {
+        return orderRequestList.stream().map(orderRequest -> {
+            Order order = orderMapper.toOrderEntity(orderRequest);
 
-        UserAccount buyer = userAccountRepository.findById(orderRequest.getBuyerId())
-                .orElseThrow(() -> new BadRequestException("User not found with id: " + orderRequest.getBuyerId()));
-        order.setBuyer(buyer);
+            UserAccount buyer = userAccountRepository.findById(orderRequest.getBuyerId())
+                    .orElseThrow(() -> new BadRequestException("User not found with id: " + orderRequest.getBuyerId()));
+            order.setBuyer(buyer);
 
-        UserAccount seller = userAccountRepository.findById(orderRequest.getSellerId())
-                .orElseThrow(() -> new BadRequestException("User not found with id: " + orderRequest.getSellerId()));
-        order.setSeller(seller);
+            UserAccount seller = userAccountRepository.findById(orderRequest.getSellerId())
+                    .orElseThrow(() -> new BadRequestException("User not found with id: " + orderRequest.getSellerId()));
+            order.setSeller(seller);
 
-        if (Objects.equals(buyer.getId(), seller.getId())) {
-            throw new EntityNotFoundException("Buyer and Seller cannot be the same user.");
-        }
+            if (Objects.equals(buyer.getId(), seller.getId())) {
+                throw new EntityNotFoundException("Buyer and Seller cannot be the same user.");
+            }
 
-        if (seller.getType() != UserAccountType.SELLER) {
-            throw new EntityNotFoundException("The specified sellerId does not belong to a seller.");
-        }
+            if (seller.getType() != UserAccountType.SELLER) {
+                throw new EntityNotFoundException("The specified sellerId does not belong to a seller.");
+            }
 
-        List<OrderItem> orderItems = orderRequest.getOrderItems().stream()
-                .map(orderItemRequest -> {
-                    OrderItem orderItem = orderMapper.toOrderItemEntity(order, orderItemRequest);
+            List<OrderItem> orderItems = orderRequest.getOrderItems().stream()
+                    .map(orderItemRequest -> {
+                        OrderItem orderItem = orderMapper.toOrderItemEntity(order, orderItemRequest);
 
-                    // Validate SaleItem existence
-                    var saleItem = saleItemRepository.findById(orderItemRequest.getSaleItemId())
-                            .orElseThrow(() -> new EntityNotFoundException("SaleItem not found with id: " + orderItemRequest.getSaleItemId()));
+                        var saleItem = saleItemRepository.findById(orderItemRequest.getSaleItemId())
+                                .orElseThrow(() -> new EntityNotFoundException("SaleItem not found with id: " + orderItemRequest.getSaleItemId()));
 
-                    if (!Objects.equals(saleItem.getSeller().getId(), seller.getId())) {
-                        throw new BadRequestException("SaleItem id: " + orderItemRequest.getSaleItemId() + " does not belong to Seller id: " + seller.getId());
-                    }
+                        if (!Objects.equals(saleItem.getSeller().getId(), seller.getId())) {
+                            throw new BadRequestException("SaleItem id: " + orderItemRequest.getSaleItemId() + " does not belong to Seller id: " + seller.getId());
+                        }
 
-                    if (saleItem.getQuantity() < orderItemRequest.getQuantity()) {
-                        throw new ResourceConflictException("Insufficient stock for SaleItem id: " + orderItemRequest.getSaleItemId());
-                    }
+                        if (saleItem.getQuantity() < orderItemRequest.getQuantity()) {
+                            throw new ResourceConflictException("Insufficient stock for SaleItem id: " + orderItemRequest.getSaleItemId());
+                        }
 
-                    orderItem.setSaleItem(saleItem);
-                    orderItem.setOrder(order);
-                    orderItem.setBuyer(buyer);
-                    return orderItem;
-                }).toList();
+                        orderItem.setSaleItem(saleItem);
+                        orderItem.setOrder(order);
+                        orderItem.setBuyer(buyer);
+                        return orderItem;
+                    }).toList();
 
-        order.setOrderItems(orderItems);
+            order.setOrderItems(orderItems);
+            orderRepository.saveAndFlush(order);
 
-        orderRepository.saveAndFlush(order);
-
-        return orderMapper.toOrderResponse(order, false);
+            return orderMapper.toOrderResponse(order, false);
+        }).toList();
     }
 
     @Override
