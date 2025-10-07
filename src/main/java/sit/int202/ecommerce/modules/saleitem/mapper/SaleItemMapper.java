@@ -11,8 +11,9 @@ import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
-import sit.int202.ecommerce.modules.saleitem.dto.response.SellerSummaryResponse;
 import sit.int202.ecommerce.modules.saleitem.model.SaleItem;
+import sit.int202.ecommerce.modules.user.dto.response.UserSummaryResponse;
+import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 
 import java.util.Comparator;
 import java.util.List;
@@ -24,6 +25,7 @@ public class SaleItemMapper {
     private final ModelMapper modelMapper;
     private final FileMapper fileMapper;
     private final FileServiceImpl fileService;
+    private final UserMapper userMapper;
 
     public SaleItemDetailResponse toDetailResponse(SaleItem saleItem) {
         SaleItemDetailResponse dto = modelMapper.map(saleItem, SaleItemDetailResponse.class);
@@ -33,9 +35,7 @@ public class SaleItemMapper {
         }
 
         if (saleItem.getSeller() != null) {
-            SellerSummaryResponse sellerDto = new SellerSummaryResponse();
-            sellerDto.setId(saleItem.getSeller().getId());
-            sellerDto.setNickname(saleItem.getSeller().getNickname());
+            UserSummaryResponse sellerDto = userMapper.toUserSummaryResponse(saleItem.getSeller());
             dto.setSeller(sellerDto);
         }
 
@@ -55,9 +55,7 @@ public class SaleItemMapper {
     public SaleItemGalleryResponse toGalleryResponse(SaleItem saleItem) {
         var dto = modelMapper.map(saleItem, SaleItemGalleryResponse.class);
         if (saleItem.getSeller() != null) {
-            SellerSummaryResponse sellerDto = new SellerSummaryResponse();
-            sellerDto.setId(saleItem.getSeller().getId());
-            sellerDto.setNickname(saleItem.getSeller().getNickname());
+            UserSummaryResponse sellerDto = userMapper.toUserSummaryResponse(saleItem.getSeller());
             dto.setSeller(sellerDto);
         }
         return dto;

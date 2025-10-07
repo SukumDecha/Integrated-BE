@@ -1,21 +1,23 @@
 package sit.int202.ecommerce.modules.order.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import sit.int202.ecommerce.modules.order.model.OrderStatus;
-import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
+import sit.int202.ecommerce.modules.user.dto.response.UserSummaryResponse;
 
 import java.util.List;
 
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrderResponse {
 
     private Integer id;
 
     private Integer buyerId;
-    private UserResponse buyer;
+    private UserSummaryResponse buyer;
 
     private Integer sellerId;
-    private UserResponse seller;
+    private UserSummaryResponse seller;
 
     private String orderDate;
     private String orderNote;

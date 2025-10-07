@@ -18,6 +18,8 @@ import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
 import sit.int202.ecommerce.modules.order.service.OrderService;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 
+import java.util.List;
+
 @RestController()
 @Tag(name = "Order", description = "Endpoints for managing orders")
 @AllArgsConstructor()
@@ -43,9 +45,9 @@ public class OrderController {
                     )
             }
     )
-    public ResponseEntity<OrderResponse> placeOrder(@Valid @RequestBody OrderRequest orderRequest) {
-        OrderResponse orderResponse = orderService.placeOrder(orderRequest);
-        return ResponseEntity.ok(orderResponse);
+    public ResponseEntity<List<OrderResponse>> placeOrder(@Valid @RequestBody List<OrderRequest> orders) {
+        List<OrderResponse> orderListResponse = orderService.placeOrder(orders);
+        return ResponseEntity.ok(orderListResponse);
     }
 
     @GetMapping("/v2/orders/{id}")

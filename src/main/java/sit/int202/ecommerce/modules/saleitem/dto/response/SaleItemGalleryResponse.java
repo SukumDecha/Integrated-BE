@@ -1,6 +1,7 @@
 package sit.int202.ecommerce.modules.saleitem.dto.response;
 
 import lombok.Data;
+import sit.int202.ecommerce.modules.user.dto.response.UserSummaryResponse;
 
 @Data
 public class SaleItemGalleryResponse {
@@ -11,6 +12,6 @@ public class SaleItemGalleryResponse {
     private Integer ramGb;
     private Integer storageGb;
     private String color;
-    private SellerSummaryResponse seller;
+    private UserSummaryResponse seller;
     private Integer quantity;
 }

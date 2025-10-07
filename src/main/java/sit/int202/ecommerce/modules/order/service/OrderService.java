@@ -6,9 +6,11 @@ import sit.int202.ecommerce.modules.order.dto.request.OrderRequest;
 import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 
+import java.util.List;
+
 public interface OrderService {
 
-    OrderResponse placeOrder(OrderRequest orderRequest);
+    List<OrderResponse> placeOrder(List<OrderRequest> orders);
 
     OrderResponse findOrderById(UserPrincipal currentUser, Integer orderId);
 

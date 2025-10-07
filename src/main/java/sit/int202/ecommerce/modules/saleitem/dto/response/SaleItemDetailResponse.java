@@ -2,6 +2,7 @@ package sit.int202.ecommerce.modules.saleitem.dto.response;
 
 import lombok.Data;
 import sit.int202.ecommerce.modules.file.dto.FileResponse;
+import sit.int202.ecommerce.modules.user.dto.response.UserSummaryResponse;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -19,7 +20,7 @@ public class SaleItemDetailResponse {
     private Integer quantity;
     private Integer storageGb;
     private String color;
-    private SellerSummaryResponse seller;
+    private UserSummaryResponse seller;
 
     private List<FileResponse> saleItemImages;
     private Instant createdOn;

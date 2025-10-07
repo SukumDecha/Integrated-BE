@@ -10,6 +10,7 @@ import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
 import sit.int202.ecommerce.modules.order.model.Order;
 import sit.int202.ecommerce.modules.order.model.OrderItem;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
+import sit.int202.ecommerce.modules.user.dto.response.UserSummaryResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 
 import java.util.Comparator;
@@ -33,15 +34,15 @@ public class OrderMapper {
         OrderResponse orderResponse = modelMapper.map(order, OrderResponse.class);
 
         if (includeBuyer) {
-            UserResponse buyer = userMapper.toUserResponse(order.getBuyer());
-            orderResponse.setBuyer(buyer);
-
-            orderResponse.setSellerId(order.getSeller().getId());
+            UserSummaryResponse buyerDto = userMapper.toUserSummaryResponse(order.getBuyer());
+            orderResponse.setBuyer(buyerDto);
+            orderResponse.setBuyerId(null);
+            orderResponse.setSeller(null);
         } else {
-            UserResponse seller = userMapper.toUserResponse(order.getSeller());
-            orderResponse.setSeller(seller);
-
-            orderResponse.setBuyerId(order.getBuyer().getId());
+            UserSummaryResponse sellerDto = userMapper.toUserSummaryResponse(order.getSeller());
+            orderResponse.setSeller(sellerDto);
+            orderResponse.setSellerId(null);
+            orderResponse.setBuyer(null);
         }
 
         if (order.getOrderDate() != null) {
