@@ -63,7 +63,7 @@ public class OrderMapper {
         Order order = new Order();
         order.setShippingAddress(request.getShippingAddress());
         order.setOrderNote(request.getOrderNote());
-        order.setOrderDate(request.getOrderDate().atStartOfDay().toInstant(java.time.ZoneOffset.UTC));
+        order.setOrderDate(request.getOrderDate());
         order.setStatus(request.getOrderStatus());
 
         return order;

@@ -3,11 +3,10 @@ package sit.int202.ecommerce.modules.order.dto.request;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import sit.int202.ecommerce.modules.order.model.OrderStatus;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -27,8 +26,8 @@ public class OrderRequest {
 
     @NotNull(message = "OrderDate cannot be null")
 //    Format as ISO Date
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
-    private LocalDate orderDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX", timezone = "UTC")
+    private Instant orderDate;
 
     @NotNull(message = "OrderStatus cannot be null")
     private OrderStatus orderStatus;
