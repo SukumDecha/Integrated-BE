@@ -26,7 +26,8 @@ public class OrderRequest {
     private String orderNote;
 
     @NotNull(message = "OrderDate cannot be null")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+//    Format as ISO Date
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
     private LocalDate orderDate;
 
     @NotNull(message = "OrderStatus cannot be null")
