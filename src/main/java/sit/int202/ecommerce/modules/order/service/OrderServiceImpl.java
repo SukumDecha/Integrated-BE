@@ -74,6 +74,8 @@ public class OrderServiceImpl implements OrderService {
                             throw new ResourceConflictException("Insufficient stock for SaleItem id: " + orderItemRequest.getSaleItemId());
                         }
 
+                        saleItem.setQuantity(saleItem.getQuantity() - orderItemRequest.getQuantity());
+
                         orderItem.setSaleItem(saleItem);
                         orderItem.setOrder(order);
                         orderItem.setBuyer(buyer);
