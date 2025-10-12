@@ -18,6 +18,7 @@ import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
 import sit.int202.ecommerce.modules.order.mapper.OrderMapper;
 import sit.int202.ecommerce.modules.order.model.Order;
 import sit.int202.ecommerce.modules.order.model.OrderItem;
+import sit.int202.ecommerce.modules.order.model.OrderStatus;
 import sit.int202.ecommerce.modules.order.repository.OrderRepository;
 import sit.int202.ecommerce.modules.saleitem.repository.SaleItemRepository;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
@@ -127,7 +128,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public PaginateResponse<OrderResponse> getOrdersBySellerId(Integer sellerId, UserPrincipal currentUser, PaginationRequest pagination) {
+    public PaginateResponse<OrderResponse> getOrdersBySellerId(Integer sellerId, UserPrincipal currentUser, PaginationRequest pagination, String tab) {
         if (!sellerId.equals(currentUser.getId())) {
             throw new ForbiddenException("Access denied: Seller ID mismatch.");
         }
@@ -140,10 +141,29 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Pageable pageable = PaginationUtils.buildPageable(pagination);
-        Specification<Order> specification = (root, query, criteriaBuilder) ->
-                criteriaBuilder.or(
-                        criteriaBuilder.equal(root.get("seller").get("id"), sellerId)
-                );
+        Specification<Order> specification = (root, query, cb) -> {
+            var sellerPredicate = cb.equal(root.get("seller").get("id"), sellerId);
+
+            switch (tab.toLowerCase()) {
+                case "new":
+                    return cb.and(
+                            sellerPredicate,
+                            cb.isFalse(root.get("viewedBySeller")),
+                            cb.notEqual(root.get("orderStatus"), OrderStatus.CANCELED)
+                    );
+                case "canceled":
+                    return cb.and(
+                            sellerPredicate,
+                            cb.equal(root.get("orderStatus"), OrderStatus.CANCELED)
+                    );
+                case "all":
+                default:
+                    return cb.and(
+                            sellerPredicate,
+                            cb.equal(root.get("orderStatus"), OrderStatus.COMPLETED)
+                    );
+            }
+        };;
 
         Page<Order> orderPage = orderRepository.findAll(specification, pageable);
         Page<OrderResponse> orderResponsePage = orderPage.map(

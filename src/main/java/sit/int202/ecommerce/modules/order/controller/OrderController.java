@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.websocket.server.PathParam;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -118,7 +119,8 @@ public class OrderController {
     )
     public ResponseEntity<PaginateResponse<OrderResponse>> getOrdersBySellerId(@PathVariable Integer sellerId,
                                                                                @AuthenticationPrincipal UserPrincipal currentUser,
-                                                                               @Valid @ModelAttribute PaginationRequest pagination) {
-        return ResponseEntity.ok(orderService.getOrdersBySellerId(sellerId, currentUser, pagination));
+                                                                               @Valid @ModelAttribute PaginationRequest pagination,
+                                                                               @RequestParam(defaultValue = "new") String tab) {
+        return ResponseEntity.ok(orderService.getOrdersBySellerId(sellerId, currentUser, pagination, tab));
     }
 }

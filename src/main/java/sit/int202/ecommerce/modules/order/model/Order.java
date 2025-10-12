@@ -50,6 +50,11 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "viewedBySeller", nullable = false)
+    private Boolean viewedBySeller = false;
+
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "orderDate")
     private Instant orderDate;
