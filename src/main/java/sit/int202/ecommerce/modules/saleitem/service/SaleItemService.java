@@ -375,7 +375,6 @@ public class SaleItemService {
     public PaginateResponse<SaleItemDetailResponse> getBySellerId(
             Integer sellerId,
             SaleItemPaginationRequest request,
-            String status,
             UserPrincipal currentUser // เพิ่ม user จาก token
     ) {
         // ตรวจสอบว่า user login แล้วหรือยัง
