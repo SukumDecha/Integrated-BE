@@ -9,6 +9,7 @@ import sit.int202.ecommerce.modules.order.dto.response.OrderItemResponse;
 import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
 import sit.int202.ecommerce.modules.order.model.Order;
 import sit.int202.ecommerce.modules.order.model.OrderItem;
+import sit.int202.ecommerce.modules.order.model.OrderStatus;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserSummaryResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
@@ -63,8 +64,8 @@ public class OrderMapper {
         Order order = new Order();
         order.setShippingAddress(request.getShippingAddress());
         order.setOrderNote(request.getOrderNote());
-        order.setOrderDate(request.getOrderDate());
-        order.setStatus(request.getOrderStatus());
+        order.setOrderDate(request.getOrderDate().toInstant());
+        order.setStatus(request.getOrderStatus() == null ? OrderStatus.COMPLETED : request.getOrderStatus());
 
         return order;
     }

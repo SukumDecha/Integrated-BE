@@ -1,6 +1,5 @@
 package sit.int202.ecommerce.modules.order.service;
 
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,7 +10,6 @@ import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.common.dto.request.PaginationRequest;
 import sit.int202.ecommerce.common.exceptions.BadRequestException;
 import sit.int202.ecommerce.common.exceptions.ForbiddenException;
-import sit.int202.ecommerce.common.exceptions.ResourceConflictException;
 import sit.int202.ecommerce.common.utils.PaginationUtils;
 import sit.int202.ecommerce.modules.order.dto.request.OrderRequest;
 import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
@@ -28,6 +26,7 @@ import sit.int202.ecommerce.modules.user.repository.UserAccountRepository;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @AllArgsConstructor
@@ -40,8 +39,12 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
 
     @Override
-    public List<OrderResponse> placeOrder(List<OrderRequest> orderRequestList) {
+    public List<OrderResponse> placeOrder(UserPrincipal currentUser, List<OrderRequest> orderRequestList) {
         return orderRequestList.stream().map(orderRequest -> {
+            if (!Objects.equals(orderRequest.getBuyerId(), currentUser.getId())) {
+                throw new ForbiddenException("Access denied: Buyer ID mismatch.");
+            }
+
             Order order = orderMapper.toOrderEntity(orderRequest);
 
             UserAccount buyer = userAccountRepository.findById(orderRequest.getBuyerId())
@@ -53,12 +56,14 @@ public class OrderServiceImpl implements OrderService {
             order.setSeller(seller);
 
             if (Objects.equals(buyer.getId(), seller.getId())) {
-                throw new EntityNotFoundException("Buyer and Seller cannot be the same user.");
+                throw new BadRequestException("Buyer and Seller cannot be the same user.");
             }
 
             if (seller.getType() != UserAccountType.SELLER) {
-                throw new EntityNotFoundException("The specified sellerId does not belong to a seller.");
+                throw new BadRequestException("The specified sellerId does not belong to a seller.");
             }
+
+            AtomicBoolean shouldCancel = new AtomicBoolean(false);
 
             List<OrderItem> orderItems = orderRequest.getOrderItems().stream()
                     .map(orderItemRequest -> {
@@ -72,7 +77,7 @@ public class OrderServiceImpl implements OrderService {
                         }
 
                         if (saleItem.getQuantity() < orderItemRequest.getQuantity()) {
-                            throw new ResourceConflictException("Insufficient stock for SaleItem id: " + orderItemRequest.getSaleItemId());
+                            shouldCancel.set(true);
                         }
 
                         saleItem.setQuantity(saleItem.getQuantity() - orderItemRequest.getQuantity());
@@ -82,6 +87,11 @@ public class OrderServiceImpl implements OrderService {
                         orderItem.setBuyer(buyer);
                         return orderItem;
                     }).toList();
+
+            if (shouldCancel.get()) {
+                order.setStatus(OrderStatus.CANCELLED);
+                order.setOrderNote("Order has been canceled due to insufficient stock.");
+            }
 
             order.setOrderItems(orderItems);
             orderRepository.saveAndFlush(order);
@@ -156,12 +166,12 @@ public class OrderServiceImpl implements OrderService {
                     return cb.and(
                             sellerPredicate,
                             cb.isFalse(root.get("viewedBySeller")),
-                            cb.notEqual(root.get("orderStatus"), OrderStatus.CANCELED)
+                            cb.notEqual(root.get("orderStatus"), OrderStatus.CANCELLED)
                     );
                 case "canceled":
                     return cb.and(
                             sellerPredicate,
-                            cb.equal(root.get("orderStatus"), OrderStatus.CANCELED)
+                            cb.equal(root.get("orderStatus"), OrderStatus.CANCELLED)
                     );
                 case "all":
                 default:

@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface OrderService {
 
-    List<OrderResponse> placeOrder(List<OrderRequest> orders);
+    List<OrderResponse> placeOrder(UserPrincipal currentUser, List<OrderRequest> orders);
 
     OrderResponse findOrderById(UserPrincipal currentUser, Integer orderId);
 

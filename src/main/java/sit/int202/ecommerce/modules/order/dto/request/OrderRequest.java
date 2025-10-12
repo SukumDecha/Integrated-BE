@@ -1,12 +1,11 @@
 package sit.int202.ecommerce.modules.order.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import sit.int202.ecommerce.modules.order.model.OrderStatus;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Data
@@ -25,11 +24,8 @@ public class OrderRequest {
     private String orderNote;
 
     @NotNull(message = "OrderDate cannot be null")
-//    Format as ISO Date
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX", timezone = "UTC")
-    private Instant orderDate;
+    private OffsetDateTime orderDate;
 
-    @NotNull(message = "OrderStatus cannot be null")
     private OrderStatus orderStatus;
 
     @NotNull(message = "OrderItems cannot be null")
@@ -57,5 +53,13 @@ public class OrderRequest {
         }
 
         this.shippingAddress = shippingAddress;
+    }
+
+    public void setOrderStatus(OrderStatus orderStatus) {
+        if (orderStatus == null) {
+            orderStatus = OrderStatus.COMPLETED;
+        }
+
+        this.orderStatus = orderStatus;
     }
 }
