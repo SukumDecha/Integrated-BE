@@ -34,9 +34,10 @@ public class SaleItemBySellerController {
     public ResponseEntity<?> getSaleItemsBySeller(
             @PathVariable Integer id,
             @AuthenticationPrincipal UserPrincipal user,
+            @RequestParam(required = false) String status,
             @ModelAttribute SaleItemPaginationRequest request
     ) {
-        PaginateResponse<SaleItemDetailResponse> response = saleItemService.getBySellerId(id, request, user);
+        PaginateResponse<SaleItemDetailResponse> response = saleItemService.getBySellerId(id, request, status, user);
         return ResponseEntity.ok(response);
     }
 }

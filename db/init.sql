@@ -216,16 +216,13 @@ CREATE TABLE IF NOT EXISTS file_metadata (
 
 -- สร้างตาราง order
 CREATE TABLE IF NOT EXISTS `order` (
-                                       id INT AUTO_INCREMENT PRIMARY KEY,
-                                       buyerId INT NOT NULL,
-                                       sellerId INT NOT NULL,
-
-                                       shippingAddress TEXT NOT NULL CHECK (TRIM(shippingAddress) <> ''),
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    buyerId INT NOT NULL,
+    sellerId INT NOT NULL,
+    shippingAddress TEXT NOT NULL CHECK (TRIM(shippingAddress) <> ''),
     orderNote TEXT CHECK (orderNote IS NULL OR TRIM(orderNote) <> ''),
-
     status ENUM('COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'COMPLETED',
-
-
+    viewedBySeller BOOLEAN NOT NULL DEFAULT FALSE,
     orderDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     createdOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

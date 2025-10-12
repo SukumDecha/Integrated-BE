@@ -375,6 +375,7 @@ public class SaleItemService {
     public PaginateResponse<SaleItemDetailResponse> getBySellerId(
             Integer sellerId,
             SaleItemPaginationRequest request,
+            String status,
             UserPrincipal currentUser // เพิ่ม user จาก token
     ) {
         // ตรวจสอบว่า user login แล้วหรือยัง
@@ -408,6 +409,7 @@ public class SaleItemService {
         // ดึงข้อมูล
         Pageable pageable = PaginationUtils.buildPageable(request);
         Specification<SaleItem> spec = (root, query, cb) -> cb.equal(root.get("seller").get("id"), sellerId);
+
         Page<SaleItem> saleItems = saleItemRepository.findAll(spec, pageable);
         Page<SaleItemDetailResponse> dtoPage = saleItems.map(saleItemMapper::toDetailResponse);
 

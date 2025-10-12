@@ -15,6 +15,6 @@ public interface OrderService {
     OrderResponse findOrderById(UserPrincipal currentUser, Integer orderId);
 
     PaginateResponse<OrderResponse> getOrdersByBuyerId(Integer buyerId, UserPrincipal currentUser, PaginationRequest pagination);
-    PaginateResponse<OrderResponse> getOrdersBySellerId(Integer sellerId, UserPrincipal currentUser, PaginationRequest pagination);
+    PaginateResponse<OrderResponse> getOrdersBySellerId(Integer sellerId, UserPrincipal currentUser, PaginationRequest pagination, String tab);
 
 }

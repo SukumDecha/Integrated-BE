@@ -7,7 +7,6 @@ import sit.int202.ecommerce.modules.user.model.UserAccountType;
 @Data
 public class UserResponse {
     private Integer id;
-
     private String nickname;
     private String email;
     private String fullname;
