@@ -19,6 +19,7 @@ import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;
 import sit.int202.ecommerce.modules.order.service.OrderService;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController()
@@ -46,9 +47,11 @@ public class OrderController {
                     )
             }
     )
-    public ResponseEntity<List<OrderResponse>> placeOrder(@Valid @RequestBody List<OrderRequest> orders) {
-        List<OrderResponse> orderListResponse = orderService.placeOrder(orders);
-        return ResponseEntity.ok(orderListResponse);
+    public ResponseEntity<List<OrderResponse>> placeOrder(
+            @AuthenticationPrincipal UserPrincipal currentUser,
+            @Valid @RequestBody List<OrderRequest> orders) {
+        List<OrderResponse> orderListResponse = orderService.placeOrder(currentUser, orders);
+        return ResponseEntity.created(URI.create("/v2/orders")).body(orderListResponse);
     }
 
     @GetMapping("/v2/orders/{id}")
