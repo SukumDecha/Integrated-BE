@@ -95,9 +95,16 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BadRequestException("Order not found with id: " + orderId));
 
-        if (!Objects.equals(order.getBuyer().getId(), currentUser.getId()) &&
-            !Objects.equals(order.getSeller().getId(), currentUser.getId())) {
+        boolean isBuyer = Objects.equals(order.getBuyer().getId(), currentUser.getId());
+        boolean isSeller = Objects.equals(order.getSeller().getId(), currentUser.getId());
+
+        if (!isBuyer && !isSeller) {
             throw new ForbiddenException("Access denied: You are neither the buyer nor the seller of this order.");
+        }
+
+        if (isSeller && Boolean.FALSE.equals(order.getViewedBySeller())) {
+            order.setViewedBySeller(true);
+            orderRepository.save(order);
         }
 
         return orderMapper.toOrderResponse(order, false);
