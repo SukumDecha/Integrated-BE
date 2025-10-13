@@ -98,8 +98,9 @@ public class OrderController {
     )
     public ResponseEntity<PaginateResponse<OrderResponse>> getOrdersByBuyerId(@PathVariable Integer buyerId,
                                                                               @AuthenticationPrincipal UserPrincipal currentUser,
-                                                                              @Valid @ModelAttribute PaginationRequest pagination) {
-        return ResponseEntity.ok(orderService.getOrdersByBuyerId(buyerId, currentUser, pagination));
+                                                                              @Valid @ModelAttribute PaginationRequest pagination,
+                                                                              @RequestParam String tab) {
+        return ResponseEntity.ok(orderService.getOrdersByBuyerId(buyerId, currentUser, pagination, tab));
     }
 
     @GetMapping("/v2/sellers/{sellerId}/orders")

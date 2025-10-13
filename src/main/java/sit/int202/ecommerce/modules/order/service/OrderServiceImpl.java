@@ -121,7 +121,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public PaginateResponse<OrderResponse> getOrdersByBuyerId(Integer buyerId, UserPrincipal currentUser, PaginationRequest pagination) {
+    public PaginateResponse<OrderResponse> getOrdersByBuyerId(Integer buyerId, UserPrincipal currentUser, PaginationRequest pagination, String tab) {
         if (!buyerId.equals(currentUser.getId())) {
             throw new ForbiddenException("Access denied: Buyer ID mismatch.");
         }
@@ -131,14 +131,34 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Pageable pageable = PaginationUtils.buildPageable(pagination);
-        Specification<Order> specification = (root, query, criteriaBuilder) ->
-                criteriaBuilder.or(
-                        criteriaBuilder.equal(root.get("buyer").get("id"), buyerId)
-                );
+        Specification<Order> specification = (root, query, cb) -> {
+            var buyerPredicate = cb.equal(root.get("buyer").get("id"), buyerId);
 
+            switch (tab.toLowerCase()) {
+                case "complete":
+                    return cb.and(
+                            buyerPredicate,
+                            cb.equal(root.get("status"), OrderStatus.COMPLETED)
+                    );
+                case "cancelled":
+                    return cb.and(
+                            buyerPredicate,
+                            cb.equal(root.get("status"), OrderStatus.CANCELLED)
+                    );
+                case "all":
+                default:
+                    return cb.and(
+                            buyerPredicate,
+                            cb.or(
+                                    cb.equal(root.get("status"), OrderStatus.COMPLETED),
+                                    cb.equal(root.get("status"), OrderStatus.CANCELLED)
+                            )
+                    );
+            }
+        };
         Page<Order> orderPage = orderRepository.findAll(specification, pageable);
         Page<OrderResponse> orderResponsePage = orderPage.map(
-                order -> orderMapper.toOrderResponse(order, false)
+                order -> orderMapper.toOrderResponse(order, true)
         );
 
         return PaginationUtils.toPaginateResponse(orderResponsePage);
@@ -180,7 +200,7 @@ public class OrderServiceImpl implements OrderService {
                             cb.equal(root.get("status"), OrderStatus.COMPLETED)
                     );
             }
-        };;
+        };
 
         Page<Order> orderPage = orderRepository.findAll(specification, pageable);
         Page<OrderResponse> orderResponsePage = orderPage.map(
