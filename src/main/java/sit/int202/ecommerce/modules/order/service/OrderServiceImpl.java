@@ -168,7 +168,7 @@ public class OrderServiceImpl implements OrderService {
                             cb.isFalse(root.get("viewedBySeller")),
                             cb.notEqual(root.get("status"), OrderStatus.CANCELLED)
                     );
-                case "canceled":
+                case "cancelled":
                     return cb.and(
                             sellerPredicate,
                             cb.equal(root.get("status"), OrderStatus.CANCELLED)
