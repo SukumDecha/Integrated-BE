@@ -135,7 +135,7 @@ public class OrderServiceImpl implements OrderService {
             var buyerPredicate = cb.equal(root.get("buyer").get("id"), buyerId);
 
             switch (tab.toLowerCase()) {
-                case "complete":
+                case "completed":
                     return cb.and(
                             buyerPredicate,
                             cb.equal(root.get("status"), OrderStatus.COMPLETED)

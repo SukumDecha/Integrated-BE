@@ -99,7 +99,7 @@ public class OrderController {
     public ResponseEntity<PaginateResponse<OrderResponse>> getOrdersByBuyerId(@PathVariable Integer buyerId,
                                                                               @AuthenticationPrincipal UserPrincipal currentUser,
                                                                               @Valid @ModelAttribute PaginationRequest pagination,
-                                                                              @RequestParam String tab) {
+                                                                              @RequestParam(defaultValue = "completed") String tab) {
         return ResponseEntity.ok(orderService.getOrdersByBuyerId(buyerId, currentUser, pagination, tab));
     }
 
