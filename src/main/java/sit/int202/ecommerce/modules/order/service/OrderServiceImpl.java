@@ -78,9 +78,10 @@ public class OrderServiceImpl implements OrderService {
 
                         if (saleItem.getQuantity() < orderItemRequest.getQuantity()) {
                             shouldCancel.set(true);
+                        } else {
+                            saleItem.setQuantity(saleItem.getQuantity() - orderItemRequest.getQuantity());
                         }
 
-                        saleItem.setQuantity(saleItem.getQuantity() - orderItemRequest.getQuantity());
 
                         orderItem.setSaleItem(saleItem);
                         orderItem.setOrder(order);
