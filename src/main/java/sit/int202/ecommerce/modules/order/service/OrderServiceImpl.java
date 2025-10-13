@@ -158,7 +158,7 @@ public class OrderServiceImpl implements OrderService {
         };
         Page<Order> orderPage = orderRepository.findAll(specification, pageable);
         Page<OrderResponse> orderResponsePage = orderPage.map(
-                order -> orderMapper.toOrderResponse(order, true)
+                order -> orderMapper.toOrderResponse(order, false)
         );
 
         return PaginationUtils.toPaginateResponse(orderResponsePage);
