@@ -52,4 +52,30 @@ public class EmailServiceImpl implements EmailService {
             throw new RuntimeException("Failed to send verification email", e);
         }
     }
+
+    @Override
+    public void sendResetPasswordEmail(String to, String name, String token) {
+        try {
+            String resetLink = appProperties.getFrontendUrl() + "/reset-password?token=" + token;
+
+            Context context = new Context();
+            context.setVariable("name", name);
+            context.setVariable("resetLink", resetLink);
+            context.setVariable("appName", appProperties.getOrganizerEmail());
+
+            String htmlContent = templateEngine.process("reset-password", context);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("Reset your password - SSA-01");
+            helper.setText(htmlContent, true);
+            helper.setFrom(appProperties.getOrganizerEmail());
+
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            // Wrap in a runtime exception or log
+            throw new RuntimeException("Failed to send verification email", e);
+        }
+    }
 }

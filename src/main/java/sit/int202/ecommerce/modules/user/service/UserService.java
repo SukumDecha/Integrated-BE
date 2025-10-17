@@ -25,4 +25,6 @@ public interface UserService {
     UserAccount activateUser(String email);
 
     UserResponse updateById(UserUpdateRequest user, Integer id);
+
+    void updatePasswordByEmail(String email, String newPassword);
 }

@@ -5,10 +5,6 @@ import org.springframework.util.StringUtils;
 
 public final class SortUtils {
 
-//    private static final Set<String> ALLOWED_FIELDS = Set.of(
-//            "id", "model", "price", "createdOn", "updatedOn"
-//    );
-
     // Tie-breakers that are always appended
     private static final Sort DEFAULT_TIE_BREAKERS =
             Sort.by("createdOn").ascending().and(Sort.by("id").ascending());

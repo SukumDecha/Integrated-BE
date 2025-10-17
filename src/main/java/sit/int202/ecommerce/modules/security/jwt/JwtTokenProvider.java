@@ -1,5 +1,6 @@
 package sit.int202.ecommerce.modules.security.jwt;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -40,6 +41,10 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
+    public SecretKey getKey() {
+        return key;
+    }
+
     public String generateAccessToken(UserResponse user) {
         return Jwts.builder()
                 .setIssuer(issuer)
@@ -67,7 +72,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .setIssuer(issuer)
                 .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plus(24, ChronoUnit.HOURS)))
+                .setExpiration(Date.from(Instant.now().plus(15, ChronoUnit.MINUTES)))
                 .signWith(key)
                 .claim("email", user.getEmail())
                 .compact();
@@ -83,11 +88,9 @@ public class JwtTokenProvider {
 
             // Extra validation for Access Tokens
             if (claims.get("email", String.class) == null || claims.get("role", String.class) == null) {
-                System.out.println("[JWT] ❌ Invalid access token: missing claims");
                 return false;
             }
 
-            System.out.println("[JWT] ✅ Access token is valid");
             return true;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired JWT token");
@@ -105,14 +108,14 @@ public class JwtTokenProvider {
             // Refresh tokens are issued with "refresh:<userId>" as subject
             String subject = claims.getSubject();
             if (subject == null || !subject.startsWith("refresh:")) {
-                System.out.println("[JWT] ❌ Invalid refresh token: bad subject");
+                System.out.println("[JWT] Invalid refresh token: bad subject");
                 return false;
             }
 
-            System.out.println("[JWT] ✅ Refresh token is valid");
+            System.out.println("[JWT] Refresh token is valid");
             return true;
         } catch (Exception e) {
-            System.out.println("[JWT] ❌ Invalid refresh token: " + e.getMessage());
+            System.out.println("[JWT] Invalid refresh token: " + e.getMessage());
             return false;
         }
     }
@@ -135,10 +138,12 @@ public class JwtTokenProvider {
                     .parseClaimsJws(token)
                     .getBody()
                     .get("email", String.class);
-            System.out.println("[JWT] ✅ Email from token = " + email);
+            System.out.println("[JWT] Email from token = " + email);
             return email;
+        } catch (ExpiredJwtException e) {
+            throw e;
         } catch (Exception e) {
-            System.out.println("[JWT] ❌ Failed to extract email: " + e.getMessage());
+            System.out.println("[JWT] Failed to extract email: " + e.getMessage());
             return null;
         }
     }
@@ -146,12 +151,12 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         String email = getEmailFromToken(token);
         if (email == null) {
-            System.out.println("[JWT] ❌ Email is null from token");
+            System.out.println("[JWT] Email is null from token");
             return null;
         }
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-        System.out.println("[JWT] ✅ Loaded user: " + userDetails.getUsername());
+        System.out.println("[JWT] Loaded user: " + userDetails.getUsername());
 
         return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }

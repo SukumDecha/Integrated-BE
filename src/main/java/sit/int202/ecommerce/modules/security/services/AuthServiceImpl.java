@@ -1,5 +1,7 @@
 package sit.int202.ecommerce.modules.security.services;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,10 +16,12 @@ import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.common.exceptions.AccountNotActivatedException;
 import sit.int202.ecommerce.common.exceptions.MissingTokenException;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
+import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.security.jwt.JwtTokenProvider;
 import sit.int202.ecommerce.modules.email.service.EmailService;
+import sit.int202.ecommerce.modules.user.dto.response.TokenValidateResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
@@ -103,6 +107,11 @@ public class AuthServiceImpl implements AuthService {
         String email;
         try {
             email = tokenProvider.getEmailFromToken(token);
+            if (email == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid token or email not found");
+            }
+        } catch (ExpiredJwtException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token has expired");
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired token");
         }
@@ -170,8 +179,95 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private boolean isValidEmail(String email) {
-        return email != null && email.length() <= 50 &&
+        return email != null &&
+                !email.isBlank() &&
+                email.length() <= 50 &&
                 email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
+
+    private void validatePasswordStrength(String password) {
+        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&_])[A-Za-z\\d@$!%*?&_]{8,}$";
+        if (!password.matches(regex)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Password must be at least 8 characters long, contain upper and lower case letters, a number and a special character."
+            );
+        }
+    }
+
+    public String requestPasswordReset(String email) {
+        if (!isValidEmail(email)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email format");
+        }
+
+        Optional<UserAccount> optionalUser = userService.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            log.info("Password reset requested for non-existing email: {}", email);
+            return "";
+        }
+
+        UserAccount user = optionalUser.get();
+
+        if (!user.isActive()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account not activated");
+        }
+
+        String token = tokenProvider.generateEmailToken(user);
+
+        emailService.sendResetPasswordEmail(user.getEmail(), user.getNickname(), token);
+        log.info("Password reset email sent to {}", email);
+
+        return token;
+    }
+
+    @Override
+    public TokenValidateResponse validateResetPasswordToken(String token) {
+        try {
+            String email = tokenProvider.getEmailFromToken(token);
+            if (email == null) {
+                return TokenValidateResponse.builder()
+                        .valid(false)
+                        .expiresInSeconds(0)
+                        .email(null)
+                        .build();
+            }
+
+            var claims = Jwts.parserBuilder()
+                    .setSigningKey(tokenProvider.getKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            long expiresInSeconds = (claims.getExpiration().getTime() - System.currentTimeMillis()) / 1000;
+
+            return TokenValidateResponse.builder()
+                    .valid(true)
+                    .expiresInSeconds(expiresInSeconds)
+                    .email(email)
+                    .build();
+        } catch (Exception e) {
+            return TokenValidateResponse.builder()
+                    .valid(false)
+                    .expiresInSeconds(0)
+                    .email(null)
+                    .build();
+        }
+    }
+
+    @Override
+    public void updatePassword(String token, ResetPasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords do not match");
+        }
+
+        validatePasswordStrength(request.getNewPassword());
+
+        String email = tokenProvider.getEmailFromToken(token);
+        if (email == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token");
+        }
+
+        userService.updatePasswordByEmail(email, request.getNewPassword());
     }
 
 }

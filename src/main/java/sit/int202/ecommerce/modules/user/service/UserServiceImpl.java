@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
 import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
@@ -104,6 +105,18 @@ public class UserServiceImpl implements UserService {
         return mapToDto(existed);
     }
 
+//    public UserResponse updatePasswordById(ResetPasswordRequest user, Integer id) {
+//        UserAccount existed = repo.findById(id)
+//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+//
+//        String encodedPassword = passwordEncoder.encode(user.getPassword());
+//        existed.setPassword(encodedPassword);
+//
+//        repo.save(existed);
+//
+//        return mapToDto(existed);
+//    }
+
     private UserResponse mapToDto(UserAccount userAccount) {
         if (userAccount.getType() == UserAccountType.SELLER) {
             return userMapper.toSellerResponse(userAccount);
@@ -112,4 +125,12 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserResponse(userAccount);
     }
 
+    public void updatePasswordByEmail(String email, String newPassword) {
+        UserAccount user = repo.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(encodedPassword);
+        repo.save(user);
+    }
 }

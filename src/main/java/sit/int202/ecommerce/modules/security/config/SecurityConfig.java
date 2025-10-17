@@ -66,7 +66,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/v2/auth/register", "/v2/auth/verify-email", "/v2/auth/login", "/v2/auth/refresh").permitAll()
+                        .requestMatchers("/v2/auth/register", "/v2/auth/verify-email", "/v2/auth/login", "/v2/auth/refresh", "/v2/auth/forgot-password","/v2/auth/reset-password", "/v2/auth/reset-password/validate").permitAll()
                         .requestMatchers("/v1/swagger-ui/**", "/v1/api-docs/**", "/v1/swagger-resources/**", "/v1/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/sale-items","/v1/sale-items/**","/v2/sale-items", "/v2/sale-items/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/brands/**").permitAll()

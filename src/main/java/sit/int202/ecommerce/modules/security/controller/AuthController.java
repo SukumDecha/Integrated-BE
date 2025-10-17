@@ -15,10 +15,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
+import sit.int202.ecommerce.modules.user.dto.request.ForgotPasswordRequest;
+import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
 import sit.int202.ecommerce.modules.security.services.AuthService;
+import sit.int202.ecommerce.modules.user.dto.response.TokenValidateResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.service.UserService;
 
@@ -138,6 +141,71 @@ public class AuthController {
 
 
         return ResponseEntity.ok().body("Logged out successfully");
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(
+            summary = "Forgot password (Request reset link)",
+            description = """
+        Trigger a password reset process by sending a reset link to the user's email.
+        If the email exists in the system, a token will be generated and sent to the user.
+        """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reset link has been sent if email exists"),
+            @ApiResponse(responseCode = "400", description = "Invalid email format")
+    })
+    public ResponseEntity<?> forgotPassword(
+            @RequestBody @Validated ForgotPasswordRequest request
+    ) {
+        authService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok(Map.of(
+                "message", "If email exists, a reset link has been sent to your email."
+        ));
+    }
+
+    @GetMapping("/reset-password/validate")
+    @Operation(
+            summary = "Validate reset password token",
+            description = """
+        Validate the reset password token to check if it is valid and not expired.
+        Typically used before showing the reset password form on the frontend.
+        """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Token is valid"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
+    public ResponseEntity<?> validateResetToken(
+            @RequestParam("token") String token
+    ) {
+        TokenValidateResponse response = authService.validateResetPasswordToken(token);
+        if (!response.isValid()) {
+            return ResponseEntity.badRequest().body(response);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(
+            summary = "Reset password",
+            description = """
+        Reset the user's password using a valid reset token.
+        The token must not be expired. This is typically used after the user clicks the reset link sent to their email.
+        """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password reset successful"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
+    public ResponseEntity<?> resetPassword(
+            @RequestBody @Validated ResetPasswordRequest request,
+            @RequestParam("token") String token
+    ) {
+        authService.updatePassword(token, request);
+        return ResponseEntity.ok(Map.of(
+                "message", "Password reset successful"
+        ));
     }
 
 }
