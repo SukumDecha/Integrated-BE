@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.file.model.FileEntity;
 import sit.int202.ecommerce.modules.file.service.FileServiceImpl;
@@ -112,4 +113,12 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserResponse(userAccount);
     }
 
+    public void updatePasswordByEmail(String email, String newPassword) {
+        UserAccount user = repo.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(encodedPassword);
+        repo.save(user);
+    }
 }

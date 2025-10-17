@@ -4,9 +4,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
+import sit.int202.ecommerce.modules.user.dto.request.ChangePasswordRequest;
+import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
+import sit.int202.ecommerce.modules.user.dto.response.TokenValidateResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 
 import java.util.Map;
@@ -21,4 +24,12 @@ public interface AuthService {
     UserPrincipal getCurrentUser();
 
     Map<String, String> refreshToken(HttpServletRequest request, HttpServletResponse response);
+
+    String requestPasswordReset(String email);
+
+    TokenValidateResponse validateResetPasswordToken(String token);
+
+    void updatePassword(String token, ResetPasswordRequest request);
+
+    void changePassword(ChangePasswordRequest request);
 }

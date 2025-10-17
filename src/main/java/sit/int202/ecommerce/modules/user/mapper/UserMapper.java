@@ -48,4 +48,6 @@ public class UserMapper {
     public UserSummaryResponse toUserSummaryResponse(UserAccount user) {
         return modelMapper.map(user, UserSummaryResponse.class);
     }
+
+
 }
