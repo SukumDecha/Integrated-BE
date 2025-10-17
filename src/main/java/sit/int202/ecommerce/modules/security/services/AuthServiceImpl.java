@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.common.exceptions.AccountNotActivatedException;
 import sit.int202.ecommerce.common.exceptions.MissingTokenException;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
+import sit.int202.ecommerce.modules.user.dto.request.ChangePasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
@@ -39,10 +41,9 @@ public class AuthServiceImpl implements AuthService {
 
     private final EmailService emailService;
     private final UserService userService;
-
     private final UserMapper userMapper;
-
     private final JwtTokenProvider tokenProvider;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Map<String, String> authenticate(UserLoginRequest request) {
@@ -186,7 +187,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void validatePasswordStrength(String password) {
-        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&_])[A-Za-z\\d@$!%*?&_]{8,}$";
+        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&_.])[A-Za-z\\d@$!%*?&_.]{8,}$";
         if (!password.matches(regex)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -270,4 +271,24 @@ public class AuthServiceImpl implements AuthService {
         userService.updatePasswordByEmail(email, request.getNewPassword());
     }
 
+    @Override
+    public void changePassword(ChangePasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New passwords do not match");
+        }
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserAccount user = userService.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid current password");
+        }
+
+        validatePasswordStrength(request.getNewPassword());
+
+        userService.updatePasswordByEmail(email, request.getNewPassword());
+
+        log.info("Password changed for user: {}", email);
+    }
 }

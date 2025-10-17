@@ -105,18 +105,6 @@ public class UserServiceImpl implements UserService {
         return mapToDto(existed);
     }
 
-//    public UserResponse updatePasswordById(ResetPasswordRequest user, Integer id) {
-//        UserAccount existed = repo.findById(id)
-//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-//
-//        String encodedPassword = passwordEncoder.encode(user.getPassword());
-//        existed.setPassword(encodedPassword);
-//
-//        repo.save(existed);
-//
-//        return mapToDto(existed);
-//    }
-
     private UserResponse mapToDto(UserAccount userAccount) {
         if (userAccount.getType() == UserAccountType.SELLER) {
             return userMapper.toSellerResponse(userAccount);

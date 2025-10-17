@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
+import sit.int202.ecommerce.modules.user.dto.request.ChangePasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
@@ -30,5 +31,5 @@ public interface AuthService {
 
     void updatePassword(String token, ResetPasswordRequest request);
 
-
+    void changePassword(ChangePasswordRequest request);
 }

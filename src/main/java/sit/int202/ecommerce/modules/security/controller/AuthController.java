@@ -2,12 +2,15 @@ package sit.int202.ecommerce.modules.security.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,10 +18,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
-import sit.int202.ecommerce.modules.user.dto.request.ForgotPasswordRequest;
-import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
-import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
-import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
+import sit.int202.ecommerce.modules.user.dto.request.*;
 import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
 import sit.int202.ecommerce.modules.security.services.AuthService;
 import sit.int202.ecommerce.modules.user.dto.response.TokenValidateResponse;
@@ -206,6 +206,32 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
                 "message", "Password reset successful"
         ));
+    }
+
+    @PatchMapping("/change-password")
+    @Operation(
+            summary = "Change password",
+            description = """
+                Change the user's password using their old password.
+                The user must be authenticated and provide the correct current password.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password changed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request or password policy not met", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Invalid current password", content = @Content)
+    })
+    public ResponseEntity<?> changePassword(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = ChangePasswordRequest.class))
+            )
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        authService.changePassword(request);
+        return ResponseEntity.ok(
+                java.util.Map.of("message", "Password changed successfully")
+        );
     }
 
 }
