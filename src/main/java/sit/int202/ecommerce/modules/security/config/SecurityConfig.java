@@ -109,7 +109,7 @@ public class SecurityConfig {
             List<String> originList = List.of(allowedOrigins.split("\\s*,\\s*"));
             configuration.setAllowedOrigins(originList);
         }
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH" ,"OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Origin", "Accept"));
         configuration.setAllowCredentials(true);
 
