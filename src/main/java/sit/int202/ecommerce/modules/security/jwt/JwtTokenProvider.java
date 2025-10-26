@@ -53,7 +53,7 @@ public class JwtTokenProvider {
                 .claim("nickname", user.getNickname())
                 .claim("role", user.getUserType().name())
                 .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plus(30, ChronoUnit.MINUTES)))
+                .setExpiration(Date.from(Instant.now().plus(1, ChronoUnit.MINUTES)))
                 .signWith(key)
                 .compact();
     }
@@ -63,7 +63,7 @@ public class JwtTokenProvider {
                 .setIssuer(issuer)
                 .setSubject("refresh:" + user.getId())
                 .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plus(24, ChronoUnit.HOURS)))
+                .setExpiration(Date.from(Instant.now().plus(3, ChronoUnit.MINUTES)))
                 .signWith(key)
                 .compact();
     }
