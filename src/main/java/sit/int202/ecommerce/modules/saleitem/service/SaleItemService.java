@@ -1,7 +1,7 @@
 package sit.int202.ecommerce.modules.saleitem.service;
 
 import org.springframework.transaction.annotation.Transactional;
-import sit.int202.ecommerce.common.dto.PaginateResponse;
+import sit.int202.ecommerce.common.dto.response.PaginateResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.request.*;
 import sit.int202.ecommerce.modules.saleitem.dto.response.*;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;

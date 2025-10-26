@@ -1,8 +1,7 @@
-package sit.int202.ecommerce.modules.security.services;
+package sit.int202.ecommerce.modules.auth.services;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,21 +17,23 @@ import sit.int202.ecommerce.common.exceptions.AccountNotActivatedException;
 import sit.int202.ecommerce.common.exceptions.MissingTokenException;
 import sit.int202.ecommerce.common.utils.CookieUtils;
 import sit.int202.ecommerce.common.utils.EmailValidator;
+import sit.int202.ecommerce.modules.security.constants.SecurityConstants;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
-import sit.int202.ecommerce.modules.security.utils.PasswordValidator;
-import sit.int202.ecommerce.modules.user.dto.request.ChangePasswordRequest;
-import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
+import sit.int202.ecommerce.modules.auth.validation.PasswordValidator;
+import sit.int202.ecommerce.modules.auth.dto.request.ChangePasswordRequest;
+import sit.int202.ecommerce.modules.auth.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
 import sit.int202.ecommerce.modules.security.jwt.JwtTokenProvider;
-import sit.int202.ecommerce.modules.email.service.EmailService;
-import sit.int202.ecommerce.modules.user.dto.response.TokenValidateResponse;
+import sit.int202.ecommerce.modules.email.EmailService;
+import sit.int202.ecommerce.modules.auth.dto.response.TokenValidateResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.mapper.UserMapper;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 import sit.int202.ecommerce.modules.user.model.UserAccountType;
 import sit.int202.ecommerce.modules.user.service.UserService;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
@@ -48,19 +49,16 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final JwtTokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
+
     private final EmailValidator emailValidator;
     private final PasswordValidator passwordValidator;
-
-    private final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 
     @Override
     public Map<String, String> authenticate(UserLoginRequest request) {
         String email = request.getEmail();
         String password = request.getPassword();
 
-        if (email == null || email.isBlank() || email.length() > 50 ||
-                password == null || password.isBlank() || password.length() > 14 ||
-                !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+        if (emailValidator.isInvalid(email) || passwordValidator.isInvalid(password)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email or password is incorrect.");
         }
 
@@ -85,8 +83,8 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = tokenProvider.generateRefreshToken(userResponse);
 
         return Map.of(
-                "accessToken", accessToken,
-                "refreshToken", refreshToken
+                SecurityConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken,
+                SecurityConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken
         );
     }
 
@@ -113,20 +111,19 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponse verifyEmail(String token) {
-        String email;
         try {
-            email = tokenProvider.getEmailFromToken(token);
+            String email = tokenProvider.getEmailFromToken(token);
             if (email == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid token or email not found");
             }
+
+            UserAccount user = userService.activateUser(email);
+            return userMapper.toUserResponse(user);
         } catch (ExpiredJwtException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token has expired");
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired token");
         }
-
-        UserAccount user = userService.activateUser(email);
-        return userMapper.toUserResponse(user);
     }
 
     @Override
@@ -140,7 +137,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Map<String, String> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         try {
-            String refreshToken = CookieUtils.getCookieValue(request, REFRESH_TOKEN_COOKIE_NAME);
+            String refreshToken = CookieUtils.getCookieValue(request, SecurityConstants.REFRESH_TOKEN_COOKIE_NAME);
 
             if (refreshToken == null) {
                 throw new MissingTokenException("Missing refresh token");
@@ -160,10 +157,17 @@ public class AuthServiceImpl implements AuthService {
             String newAccessToken = tokenProvider.generateAccessToken(user);
             String newRefreshToken = tokenProvider.generateRefreshToken(user);
 
-            CookieUtils.setCookie(response, REFRESH_TOKEN_COOKIE_NAME, newRefreshToken);
-            response.addHeader("Authorization", "Bearer " + newAccessToken);
+            CookieUtils.setCookie(
+                    response,
+                    SecurityConstants.REFRESH_TOKEN_COOKIE_NAME,
+                    newRefreshToken,
+                    Duration.ofDays(1));
 
-            return Map.of("accessToken", newAccessToken);
+            response.addHeader(
+                    SecurityConstants.ACCESS_TOKEN_HEADER,
+                    SecurityConstants.TOKEN_PREFIX + newAccessToken);
+
+            return Map.of(SecurityConstants.ACCESS_TOKEN_COOKIE_NAME, newAccessToken);
         } catch (ExpiredJwtException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token has expired");
         }
@@ -171,7 +175,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String requestPasswordReset(String email) {
-        if (!emailValidator.isValid(email)) {
+        if (emailValidator.isInvalid(email)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email format");
         }
 
@@ -235,7 +239,12 @@ public class AuthServiceImpl implements AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords do not match");
         }
 
-        passwordValidator.validate(request.getNewPassword());
+        if (passwordValidator.isInvalid(request.getNewPassword())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Password must be at least 8 characters long, contain upper and lower case letters, a number, and a special character."
+            );
+        }
 
         String email = tokenProvider.getEmailFromToken(token);
         if (email == null) {
@@ -259,10 +268,14 @@ public class AuthServiceImpl implements AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid current password");
         }
 
-        passwordValidator.validate(request.getNewPassword());
+        if (passwordValidator.isInvalid(request.getNewPassword())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Password must be at least 8 characters long, contain upper and lower case letters, a number, and a special character."
+            );
+        }
 
         userService.updatePasswordByEmail(email, request.getNewPassword());
 
-        log.info("Password changed for user: {}", email);
     }
 }

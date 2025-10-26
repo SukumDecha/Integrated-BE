@@ -1,4 +1,4 @@
-package sit.int202.ecommerce.modules.security.controller;
+package sit.int202.ecommerce.modules.auth.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -17,15 +16,21 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import sit.int202.ecommerce.common.utils.CookieUtils;
+import sit.int202.ecommerce.modules.auth.dto.request.ChangePasswordRequest;
+import sit.int202.ecommerce.modules.auth.dto.request.ForgotPasswordRequest;
+import sit.int202.ecommerce.modules.auth.dto.request.ResetPasswordRequest;
+import sit.int202.ecommerce.modules.security.constants.SecurityConstants;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 import sit.int202.ecommerce.modules.user.dto.request.*;
-import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
-import sit.int202.ecommerce.modules.security.services.AuthService;
-import sit.int202.ecommerce.modules.user.dto.response.TokenValidateResponse;
+import sit.int202.ecommerce.modules.auth.dto.response.TokenResponse;
+import sit.int202.ecommerce.modules.auth.services.AuthService;
+import sit.int202.ecommerce.modules.auth.dto.response.TokenValidateResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.service.UserService;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
 
 @Tag(name = "Auth", description = "APIs for authentication")
@@ -51,22 +56,12 @@ public class AuthController {
     public ResponseEntity<TokenResponse> login(@RequestBody @Validated UserLoginRequest request, HttpServletResponse response) {
         Map<String, String> tokens = authService.authenticate(request);
 
-        String accessToken = tokens.get("accessToken");
-        String refreshToken = tokens.get("refreshToken");
+        String accessToken = tokens.get(SecurityConstants.ACCESS_TOKEN_COOKIE_NAME);
+        String refreshToken = tokens.get(SecurityConstants.REFRESH_TOKEN_COOKIE_NAME);
 
         TokenResponse tokenResponse = TokenResponse.builder().access_token(accessToken).build();
 
-        Cookie cookie = new Cookie("refresh_token", refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false); // Change to true in production
-        cookie.setPath("/");
-        response.addCookie(cookie);
-
-        String sameSite = String.format(
-                "refresh_token=%s; Path=/; HttpOnly; SameSite=Strict; Secure",
-                refreshToken
-        );
-        response.addHeader("Set-Cookie", sameSite);
+        CookieUtils.setCookie(response, "refresh_token", refreshToken, Duration.ofDays(1));
 
         return ResponseEntity.ok(tokenResponse);
     }
@@ -122,7 +117,7 @@ public class AuthController {
     public ResponseEntity<TokenResponse> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         Map<String, String> tokens = authService.refreshToken(request, response);
 
-        String accessToken = tokens.get("accessToken");
+        String accessToken = tokens.get(SecurityConstants.ACCESS_TOKEN_COOKIE_NAME);
         TokenResponse tokenResponse = TokenResponse.builder().access_token(accessToken).build();
 
         return ResponseEntity.ok(tokenResponse);
@@ -130,15 +125,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        Cookie cookie = new Cookie("refresh_token", null);
-        cookie.setMaxAge(0);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        response.addCookie(cookie);
-
-        String sameSite = "refresh_token=null; Path=/; HttpOnly; Max-Age=0; SameSite=Strict; Secure";
-        response.addHeader("Set-Cookie", sameSite);
-
+        CookieUtils.deleteCookie(response, "refresh_token");
 
         return ResponseEntity.ok().body("Logged out successfully");
     }

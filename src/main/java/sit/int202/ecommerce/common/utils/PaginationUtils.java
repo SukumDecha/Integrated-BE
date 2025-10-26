@@ -4,9 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import sit.int202.ecommerce.common.dto.PaginateResponse;
+import sit.int202.ecommerce.common.dto.response.PaginateResponse;
 import sit.int202.ecommerce.common.dto.request.PaginationRequest;
-import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationRequest;
 
 import java.util.ArrayList;
 import java.util.List;

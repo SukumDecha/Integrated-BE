@@ -1,4 +1,4 @@
-package sit.int202.ecommerce.modules.user.dto.request;
+package sit.int202.ecommerce.modules.auth.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

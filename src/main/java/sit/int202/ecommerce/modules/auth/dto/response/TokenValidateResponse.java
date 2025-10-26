@@ -1,4 +1,4 @@
-package sit.int202.ecommerce.modules.user.dto.response;
+package sit.int202.ecommerce.modules.auth.dto.response;
 
 import lombok.Builder;
 import lombok.Data;

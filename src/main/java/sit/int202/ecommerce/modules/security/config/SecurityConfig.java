@@ -24,8 +24,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import sit.int202.ecommerce.common.dto.ErrorResponse;
-import sit.int202.ecommerce.modules.security.jwt.JwtAuthenticationFilter;
-import sit.int202.ecommerce.modules.security.services.UserDetailsServiceImpl;
+import sit.int202.ecommerce.modules.security.filters.JwtAuthenticationFilter;
+import sit.int202.ecommerce.modules.auth.services.UserDetailsServiceImpl;
 
 import java.util.List;
 

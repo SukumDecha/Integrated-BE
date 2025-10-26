@@ -12,7 +12,7 @@ public class EmailValidator {
      * @param email
      * @return true if the email is valid, false otherwise.
      */
-    public boolean isValid(String email) {
+    public boolean isInvalid(String email) {
         return email != null && !email.isBlank() && email.length() <= 50 && email.matches(EMAIL_REGEX);
     }
 

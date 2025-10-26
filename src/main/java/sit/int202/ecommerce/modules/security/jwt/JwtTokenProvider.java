@@ -4,6 +4,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -12,7 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
-import sit.int202.ecommerce.modules.security.services.UserDetailsServiceImpl;
+import sit.int202.ecommerce.modules.auth.services.UserDetailsServiceImpl;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 import sit.int202.ecommerce.modules.user.model.UserAccount;
 
@@ -31,6 +32,7 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secret;
 
+    @Getter
     private SecretKey key;
 
     @Autowired
@@ -39,10 +41,6 @@ public class JwtTokenProvider {
     @PostConstruct
     void init() {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-    }
-
-    public SecretKey getKey() {
-        return key;
     }
 
     public String generateAccessToken(UserResponse user) {
@@ -86,12 +84,7 @@ public class JwtTokenProvider {
                     .parseClaimsJws(token)
                     .getBody();
 
-            // Extra validation for Access Tokens
-            if (claims.get("email", String.class) == null || claims.get("role", String.class) == null) {
-                return false;
-            }
-
-            return true;
+            return claims.get("email", String.class) != null && claims.get("role", String.class) != null;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired JWT token");
         }

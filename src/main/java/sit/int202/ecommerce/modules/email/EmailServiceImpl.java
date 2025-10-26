@@ -1,4 +1,4 @@
-package sit.int202.ecommerce.modules.email.service;
+package sit.int202.ecommerce.modules.email;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
