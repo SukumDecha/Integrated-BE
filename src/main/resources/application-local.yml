@@ -19,5 +19,6 @@ app:
     allowed-origin: http://localhost:5173
   file:
     upload-dir: ${user.dir}/uploads
+  cookies:
+    domain: localhost
   frontend-url: http://localhost:5173
-  backend-url: http://localhost:8080

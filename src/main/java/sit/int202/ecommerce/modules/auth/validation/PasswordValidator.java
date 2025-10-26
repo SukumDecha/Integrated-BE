@@ -11,11 +11,10 @@ public class PasswordValidator {
 
     /**
      * Validate the given password against the defined complexity rules.
-     *
-     * @param password
+     * @param password password to validate
      * @throws ResponseStatusException if the password does not meet the complexity requirements.
      */
     public boolean isInvalid(String password) {
-        return password != null && !password.isBlank() && password.length() >= 8 &&  password.length() <= 14 && password.matches(PASSWORD_REGEX);
+        return password == null || password.isBlank() || password.length() < 8 || password.length() > 14 || !password.matches(PASSWORD_REGEX);
     }
 }

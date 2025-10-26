@@ -9,11 +9,11 @@ public class EmailValidator {
 
     /**
      * Validate the given email address.
-     * @param email
+     * @param email the email address to validate.
      * @return true if the email is valid, false otherwise.
      */
     public boolean isInvalid(String email) {
-        return email != null && !email.isBlank() && email.length() <= 50 && email.matches(EMAIL_REGEX);
+        return email == null || email.isBlank() || email.length() > 50 || !email.matches(EMAIL_REGEX);
     }
 
 }

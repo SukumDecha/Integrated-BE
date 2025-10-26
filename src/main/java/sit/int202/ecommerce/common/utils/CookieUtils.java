@@ -12,7 +12,7 @@ import java.time.Duration;
 @Component
 public class CookieUtils {
 
-    @Value("${app.backend-url}")
+    @Value("${app.cookies.domain}")
     private String domain;
     @Value("${app.env}")
     private String env;

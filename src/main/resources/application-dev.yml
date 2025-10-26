@@ -19,5 +19,6 @@ app:
     allowed-origin: "*"
   file:
     upload-dir: ${user.dir}/uploads
+  cookies:
+    domain: intproj24.sit.kmutt.ac.th
   frontend-url: https://intproj24.sit.kmutt.ac.th/ssa1
-  backend-url: https://intproj24.sit.kmutt.ac.th/ssa1/itb-mshop/
