@@ -1,19 +1,18 @@
-package sit.int202.ecommerce.modules.security.jwt;
+package sit.int202.ecommerce.modules.security.filters;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.server.ResponseStatusException;
-import sit.int202.ecommerce.modules.security.services.UserDetailsServiceImpl;
+import sit.int202.ecommerce.modules.security.constants.SecurityConstants;
+import sit.int202.ecommerce.modules.auth.services.UserDetailsServiceImpl;
+import sit.int202.ecommerce.modules.security.jwt.JwtTokenProvider;
 
 import java.io.IOException;
 
@@ -42,12 +41,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     System.out.println("[JWT Filter] ⚠️ Authentication ไม่ใช่ UsernamePasswordAuthenticationToken");
                 }
             }
-            // If token is null or invalid, just continue without setting authentication
-            // Spring Security will handle the unauthorized access later
 
         } catch (Exception ex) {
             System.out.println("[JWT Filter] Error processing JWT token: " + ex.getMessage());
-            // Clear security context on any exception
             SecurityContextHolder.clearContext();
         }
 
@@ -55,8 +51,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+        String bearerToken = request.getHeader(SecurityConstants.ACCESS_TOKEN_HEADER);
+        if (bearerToken != null && bearerToken.startsWith(SecurityConstants.TOKEN_PREFIX)) {
             return bearerToken.substring(7);
         }
         return null;

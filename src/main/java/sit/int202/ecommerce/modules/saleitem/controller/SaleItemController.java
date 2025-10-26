@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +24,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/v1/sale-items")
+@RequiredArgsConstructor
 public class SaleItemController {
 
-    @Autowired
-    private SaleItemServiceImpl saleItemService;
+    private final SaleItemServiceImpl saleItemService;
 
     @GetMapping
     @Operation(

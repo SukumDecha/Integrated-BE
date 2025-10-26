@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import sit.int202.ecommerce.common.dto.PaginateResponse;
+import sit.int202.ecommerce.common.dto.response.PaginateResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.service.SaleItemServiceImpl;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;

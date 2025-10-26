@@ -2,7 +2,7 @@ package sit.int202.ecommerce.modules.brand.service;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import sit.int202.ecommerce.modules.brand.dto.request.BrandCreateRequest;
 import sit.int202.ecommerce.modules.brand.dto.response.BrandDetailResponse;
@@ -17,13 +17,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class BrandServiceImpl implements BrandService {
 
-    @Autowired
-    private BrandRepository brandRepository;
-
-    @Autowired
-    private BrandMapper brandMapper;
+    private final BrandRepository brandRepository;
+    private final BrandMapper brandMapper;
 
     public List<BrandResponse> getAllBrands() {
         return brandRepository.findAll().stream()

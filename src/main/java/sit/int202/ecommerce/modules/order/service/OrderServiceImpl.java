@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import sit.int202.ecommerce.common.dto.PaginateResponse;
+import sit.int202.ecommerce.common.dto.response.PaginateResponse;
 import sit.int202.ecommerce.common.dto.request.PaginationRequest;
 import sit.int202.ecommerce.common.exceptions.BadRequestException;
 import sit.int202.ecommerce.common.exceptions.ForbiddenException;

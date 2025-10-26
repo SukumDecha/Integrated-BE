@@ -1,15 +1,14 @@
-package sit.int202.ecommerce.modules.security.services;
+package sit.int202.ecommerce.modules.auth.services;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.multipart.MultipartFile;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
-import sit.int202.ecommerce.modules.user.dto.request.ChangePasswordRequest;
-import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
+import sit.int202.ecommerce.modules.auth.dto.request.ChangePasswordRequest;
+import sit.int202.ecommerce.modules.auth.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserRegisterRequest;
-import sit.int202.ecommerce.modules.user.dto.response.TokenResponse;
-import sit.int202.ecommerce.modules.user.dto.response.TokenValidateResponse;
+import sit.int202.ecommerce.modules.auth.dto.response.TokenValidateResponse;
 import sit.int202.ecommerce.modules.user.dto.response.UserResponse;
 
 import java.util.Map;

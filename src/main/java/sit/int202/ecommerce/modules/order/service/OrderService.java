@@ -1,6 +1,6 @@
 package sit.int202.ecommerce.modules.order.service;
 
-import sit.int202.ecommerce.common.dto.PaginateResponse;
+import sit.int202.ecommerce.common.dto.response.PaginateResponse;
 import sit.int202.ecommerce.common.dto.request.PaginationRequest;
 import sit.int202.ecommerce.modules.order.dto.request.OrderRequest;
 import sit.int202.ecommerce.modules.order.dto.response.OrderResponse;

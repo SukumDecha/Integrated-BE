@@ -4,54 +4,61 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
+@Component
 public class CookieUtils {
 
-    private static String domain;
-    private static String env;
-
-    @Value("${app.backend-url}")
-    public void setDomain(String domain) {
-        CookieUtils.domain = domain;
-    }
-
+    @Value("${app.cookies.domain}")
+    private String domain;
+    @Value("${app.cookies.path}")
+    private String path;
     @Value("${app.env}")
-    public void setEnv(String env) {
-        CookieUtils.env = env;
-    }
+    private String env;
 
-    public CookieUtils() {
-        throw new UnsupportedOperationException("Utility class");
-    }
-
-    public static String getCookieValue(HttpServletRequest request, String name) {
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if (cookie.getName().equals(name)) {
-                    return cookie.getValue();
-                }
+    public String getCookieValue(HttpServletRequest request, String name) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+        for (Cookie cookie : request.getCookies()) {
+            if (cookie.getName().equals(name)) {
+                return cookie.getValue();
             }
         }
         return null;
     }
 
-    public static void setCookie(HttpServletResponse response, String name, String value) {
+    public void setCookie(HttpServletResponse response, String name, String value, Duration maxAge) {
         boolean secure = !"local".equalsIgnoreCase(env);
 
-        Cookie cookie = new Cookie(name, value);
-        cookie.setHttpOnly(true);
-        cookie.setDomain(domain);
-        cookie.setSecure(secure);
-        cookie.setPath("/");
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .domain(domain)
+                .path(path)
+                .httpOnly(true)
+                .secure(secure)
+                .sameSite("Strict")
+                .maxAge(maxAge)
+                .build();
 
-        // Optional SameSite header
-        String sameSite = String.format(
-                "s=%s; Path=/; HttpOnly; SameSite=Strict; %s",
-                name,
-                value,
-                secure ? "Secure" : ""
-        );
-        response.addHeader("Set-Cookie", sameSite);
+        response.addHeader("Set-Cookie", cookie.toString());
     }
+
+    public void deleteCookie(HttpServletResponse response, String name) {
+        boolean secure = !"local".equalsIgnoreCase(env);
+
+        ResponseCookie cookie = ResponseCookie.from(name, "")
+                .domain(domain)
+                .path(path)
+                .httpOnly(true)
+                .secure(secure)
+                .sameSite("Strict")
+                .maxAge(0)
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+    }
+
 }

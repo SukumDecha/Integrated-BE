@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import sit.int202.ecommerce.modules.security.constants.SecurityConstants;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +38,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(resolveAllowedOrigins())
                 .allowedMethods("GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS")
-                .allowedHeaders("Origin", "Accept", "Content-Type", "Authorization")
+                .allowedHeaders("Origin", "Accept", "Content-Type", SecurityConstants.ACCESS_TOKEN_HEADER)
                 .allowCredentials(true)
                 .maxAge(3600);
     }

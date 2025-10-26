@@ -1,4 +1,4 @@
-package sit.int202.ecommerce.modules.security.services;
+package sit.int202.ecommerce.modules.auth.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
