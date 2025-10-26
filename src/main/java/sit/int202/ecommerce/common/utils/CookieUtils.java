@@ -12,14 +12,12 @@ import java.time.Duration;
 @Component
 public class CookieUtils {
 
-    private static String domain;
-    private static String env;
+    @Value("${app.backend-url}")
+    private String domain;
+    @Value("${app.env}")
+    private String env;
 
-    private CookieUtils() {
-        throw new UnsupportedOperationException("Utility class");
-    }
-
-    public static String getCookieValue(HttpServletRequest request, String name) {
+    public String getCookieValue(HttpServletRequest request, String name) {
         if (request.getCookies() == null) {
             return null;
         }
@@ -31,7 +29,7 @@ public class CookieUtils {
         return null;
     }
 
-    public static void setCookie(HttpServletResponse response, String name, String value, Duration maxAge) {
+    public void setCookie(HttpServletResponse response, String name, String value, Duration maxAge) {
         boolean secure = !"local".equalsIgnoreCase(env);
 
         ResponseCookie cookie = ResponseCookie.from(name, value)
@@ -46,7 +44,7 @@ public class CookieUtils {
         response.addHeader("Set-Cookie", cookie.toString());
     }
 
-    public static void deleteCookie(HttpServletResponse response, String name) {
+    public void deleteCookie(HttpServletResponse response, String name) {
         boolean secure = !"local".equalsIgnoreCase(env);
 
         ResponseCookie cookie = ResponseCookie.from(name, "")
@@ -61,13 +59,4 @@ public class CookieUtils {
         response.addHeader("Set-Cookie", cookie.toString());
     }
 
-    @Value("${app.backend-url}")
-    public void setDomain(String domain) {
-        CookieUtils.domain = domain;
-    }
-
-    @Value("${app.env}")
-    public void setEnv(String env) {
-        CookieUtils.env = env;
-    }
 }

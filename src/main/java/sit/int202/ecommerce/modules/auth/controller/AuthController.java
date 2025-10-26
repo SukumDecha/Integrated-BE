@@ -39,9 +39,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
-
     private final AuthService authService;
     private final UserService userService;
+
+    private final CookieUtils cookieUtils;
 
     @PostMapping("/login")
     @Operation(
@@ -61,7 +62,7 @@ public class AuthController {
 
         TokenResponse tokenResponse = TokenResponse.builder().access_token(accessToken).build();
 
-        CookieUtils.setCookie(response, "refresh_token", refreshToken, Duration.ofDays(1));
+        cookieUtils.setCookie(response, "refresh_token", refreshToken, Duration.ofDays(1));
 
         return ResponseEntity.ok(tokenResponse);
     }
@@ -125,7 +126,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        CookieUtils.deleteCookie(response, "refresh_token");
+        cookieUtils.deleteCookie(response, "refresh_token");
 
         return ResponseEntity.ok().body("Logged out successfully");
     }

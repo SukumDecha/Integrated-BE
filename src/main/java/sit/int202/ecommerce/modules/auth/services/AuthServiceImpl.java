@@ -53,6 +53,8 @@ public class AuthServiceImpl implements AuthService {
     private final EmailValidator emailValidator;
     private final PasswordValidator passwordValidator;
 
+    private final CookieUtils cookieUtils;
+
     @Override
     public Map<String, String> authenticate(UserLoginRequest request) {
         String email = request.getEmail();
@@ -137,7 +139,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Map<String, String> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         try {
-            String refreshToken = CookieUtils.getCookieValue(request, SecurityConstants.REFRESH_TOKEN_COOKIE_NAME);
+            String refreshToken = cookieUtils.getCookieValue(request, SecurityConstants.REFRESH_TOKEN_COOKIE_NAME);
 
             if (refreshToken == null) {
                 throw new MissingTokenException("Missing refresh token");
@@ -157,7 +159,7 @@ public class AuthServiceImpl implements AuthService {
             String newAccessToken = tokenProvider.generateAccessToken(user);
             String newRefreshToken = tokenProvider.generateRefreshToken(user);
 
-            CookieUtils.setCookie(
+            cookieUtils.setCookie(
                     response,
                     SecurityConstants.REFRESH_TOKEN_COOKIE_NAME,
                     newRefreshToken,

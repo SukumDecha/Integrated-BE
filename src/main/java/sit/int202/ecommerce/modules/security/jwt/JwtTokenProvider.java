@@ -5,7 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,7 +24,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
+
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Value("${jwt.issuer}")
     private String issuer;
@@ -34,9 +37,6 @@ public class JwtTokenProvider {
 
     @Getter
     private SecretKey key;
-
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
 
     @PostConstruct
     void init() {
