@@ -37,12 +37,16 @@ public class UserRegisterRequest {
 
     // Seller-only fields
     @Schema(description = "Mobile number of seller (required if userType is SELLER)", example = "0812345678")
+    @NotBlank()
+    @Pattern(regexp = "\\d*", message = "Bank account number must contain digits only")
     private String mobileNumber;
 
     @Schema(description = "Bank account number of seller (required if userType is SELLER)", example = "1234567890")
+    @Size(max = 50, message = "Bank account number must be at most 50 characters")
     private String bankAccountNumber;
 
     @Schema(description = "Bank name of seller (required if userType is SELLER)", example = "Bangkok Bank")
+    @Size(max = 100, message = "Bank name must be at most 100 characters")
     private String bankName;
 
     @Schema(description = "Card ID number of seller (required if userType is SELLER)", example = "1234567890123")
