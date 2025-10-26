@@ -1,6 +1,5 @@
 package sit.int202.ecommerce.modules.saleitem.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,17 +16,16 @@ import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemCreateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
-import sit.int202.ecommerce.modules.saleitem.service.SaleItemService;
+import sit.int202.ecommerce.modules.saleitem.service.SaleItemServiceImpl;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
 @RequestMapping("/v2/sale-items")
 @RequiredArgsConstructor
 public class SaleItemV2Controller {
-    private final SaleItemService saleItemService;
+    private final SaleItemServiceImpl saleItemService;
 
     @Operation(summary = "Get all sale items with pagination, brand filter, sorting")
     @GetMapping

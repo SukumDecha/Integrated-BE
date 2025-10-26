@@ -131,26 +131,30 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Map<String, String> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = extractRefreshToken(request);
+        try {
+            String refreshToken = extractRefreshToken(request);
 
-        if (refreshToken == null || !tokenProvider.validateRefreshToken(refreshToken)) {
-            throw new MissingTokenException("Missing refresh token");
+            if (refreshToken == null || !tokenProvider.validateRefreshToken(refreshToken)) {
+                throw new MissingTokenException("Missing refresh token");
+            }
+
+            int userId = tokenProvider.getUserIdFromRefreshToken(refreshToken);
+            UserResponse user = userService.findById(userId);
+
+            if (!user.isActive()) {
+                throw new AccountNotActivatedException("User account is not activated");
+            }
+
+            String newAccessToken = tokenProvider.generateAccessToken(user);
+            String newRefreshToken = tokenProvider.generateRefreshToken(user);
+
+            updateRefreshTokenCookie(response, newRefreshToken);
+            response.addHeader("Authorization", "Bearer " + newAccessToken);
+
+            return Map.of("accessToken", newAccessToken);
+        } catch (ExpiredJwtException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token has expired");
         }
-
-        int userId = tokenProvider.getUserIdFromRefreshToken(refreshToken);
-        UserResponse user = userService.findById(userId);
-
-        if (!user.isActive()) {
-            throw new AccountNotActivatedException("User account is not activated");
-        }
-
-        String newAccessToken = tokenProvider.generateAccessToken(user);
-        String newRefreshToken = tokenProvider.generateRefreshToken(user);
-
-        updateRefreshTokenCookie(response, newRefreshToken);
-        response.addHeader("Authorization", "Bearer " + newAccessToken);
-
-        return Map.of("accessToken", newAccessToken);
     }
 
     private String extractRefreshToken(HttpServletRequest request) {

@@ -12,7 +12,7 @@ public interface FileRepository extends JpaRepository<FileEntity, Integer> {
 
     List<FileEntity> findByRefTypeAndRefIdOrderByDisplayOrderAsc(String refType, Integer refId);
 
-    void deleteByRefTypeAndRefId(String refType, Integer refId);
-
     Optional<FileEntity> findByStoredFilename(String storedFilename);
+
+    void deleteByRefTypeAndRefId(String refType, Integer refId);
 }

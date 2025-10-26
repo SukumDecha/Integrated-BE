@@ -17,7 +17,7 @@ import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemUpdateRequest;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemGalleryResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemListResponse;
-import sit.int202.ecommerce.modules.saleitem.service.SaleItemService;
+import sit.int202.ecommerce.modules.saleitem.service.SaleItemServiceImpl;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.List;
 public class SaleItemController {
 
     @Autowired
-    private SaleItemService saleItemService;
+    private SaleItemServiceImpl saleItemService;
 
     @GetMapping
     @Operation(

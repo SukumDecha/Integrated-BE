@@ -114,6 +114,8 @@ public class JwtTokenProvider {
 
             System.out.println("[JWT] Refresh token is valid");
             return true;
+        } catch (ExpiredJwtException e) {
+            throw e;
         } catch (Exception e) {
             System.out.println("[JWT] Invalid refresh token: " + e.getMessage());
             return false;

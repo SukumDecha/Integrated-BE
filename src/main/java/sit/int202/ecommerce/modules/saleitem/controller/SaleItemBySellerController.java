@@ -3,25 +3,22 @@ package sit.int202.ecommerce.modules.saleitem.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import sit.int202.ecommerce.common.dto.PaginateResponse;
 import sit.int202.ecommerce.modules.saleitem.dto.response.SaleItemDetailResponse;
-import sit.int202.ecommerce.modules.saleitem.service.SaleItemService;
+import sit.int202.ecommerce.modules.saleitem.service.SaleItemServiceImpl;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
 import sit.int202.ecommerce.modules.saleitem.dto.request.SaleItemPaginationRequest;
-import sit.int202.ecommerce.modules.user.model.UserAccountType;
 
 @RestController
 @RequestMapping("/v2/sellers")
 @RequiredArgsConstructor
 public class SaleItemBySellerController {
 
-    private final SaleItemService saleItemService;
+    private final SaleItemServiceImpl saleItemService;
 
     @GetMapping("/{id}/sale-items")
     @Operation(summary = "View Sale Items by Seller ID (Seller only)")
