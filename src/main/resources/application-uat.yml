@@ -13,10 +13,11 @@ spring:
     show-sql: false
 
 app:
+  env: UAT
   cors:
     enabled: false
     allowed-origin: http://ip24ssa1.sit.kmutt.ac.th,http://intproj24.sit.kmutt.ac.th
   file:
     upload-dir: ${user.dir}/uploads
   frontend-url: http://intproj24.sit.kmutt.ac.th/ssa1
-  backend-url: http://intproj24.sit.kmutt.ac.th/ssa1
+  backend-url: https://intproj24.sit.kmutt.ac.th/ssa1/itb-mshop/

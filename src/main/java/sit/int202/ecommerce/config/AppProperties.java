@@ -12,5 +12,6 @@ public class AppProperties {
     private String organizerEmail;
     private String frontendUrl;
     private String backendUrl;
+    private String env;
 
 }

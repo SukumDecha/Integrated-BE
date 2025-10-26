@@ -16,7 +16,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import sit.int202.ecommerce.common.exceptions.AccountNotActivatedException;
 import sit.int202.ecommerce.common.exceptions.MissingTokenException;
+import sit.int202.ecommerce.common.utils.CookieUtils;
+import sit.int202.ecommerce.common.utils.EmailValidator;
 import sit.int202.ecommerce.modules.security.model.UserPrincipal;
+import sit.int202.ecommerce.modules.security.utils.PasswordValidator;
 import sit.int202.ecommerce.modules.user.dto.request.ChangePasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.ResetPasswordRequest;
 import sit.int202.ecommerce.modules.user.dto.request.UserLoginRequest;
@@ -41,9 +44,14 @@ public class AuthServiceImpl implements AuthService {
 
     private final EmailService emailService;
     private final UserService userService;
+
     private final UserMapper userMapper;
     private final JwtTokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final EmailValidator emailValidator;
+    private final PasswordValidator passwordValidator;
+
+    private final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 
     @Override
     public Map<String, String> authenticate(UserLoginRequest request) {
@@ -132,10 +140,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Map<String, String> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         try {
-            String refreshToken = extractRefreshToken(request);
+            String refreshToken = CookieUtils.getCookieValue(request, REFRESH_TOKEN_COOKIE_NAME);
 
-            if (refreshToken == null || !tokenProvider.validateRefreshToken(refreshToken)) {
+            if (refreshToken == null) {
                 throw new MissingTokenException("Missing refresh token");
+            }
+
+            if (!tokenProvider.validateRefreshToken(refreshToken)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
             }
 
             int userId = tokenProvider.getUserIdFromRefreshToken(refreshToken);
@@ -148,7 +160,7 @@ public class AuthServiceImpl implements AuthService {
             String newAccessToken = tokenProvider.generateAccessToken(user);
             String newRefreshToken = tokenProvider.generateRefreshToken(user);
 
-            updateRefreshTokenCookie(response, newRefreshToken);
+            CookieUtils.setCookie(response, REFRESH_TOKEN_COOKIE_NAME, newRefreshToken);
             response.addHeader("Authorization", "Bearer " + newAccessToken);
 
             return Map.of("accessToken", newAccessToken);
@@ -157,51 +169,9 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private String extractRefreshToken(HttpServletRequest request) {
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("refresh_token".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        return null;
-    }
-
-    private void updateRefreshTokenCookie(HttpServletResponse response, String newRefreshToken) {
-        Cookie cookie = new Cookie("refresh_token", newRefreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false); // Change to true in production
-        cookie.setPath("/");
-        response.addCookie(cookie);
-
-        String sameSite = String.format(
-                "refresh_token=%s; Path=/; HttpOnly; SameSite=Strict; Secure",
-                newRefreshToken
-        );
-        response.addHeader("Set-Cookie", sameSite);
-
-    }
-
-    private boolean isValidEmail(String email) {
-        return email != null &&
-                !email.isBlank() &&
-                email.length() <= 50 &&
-                email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
-    }
-
-    private void validatePasswordStrength(String password) {
-        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&_.])[A-Za-z\\d@$!%*?&_.]{8,}$";
-        if (!password.matches(regex)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Password must be at least 8 characters long, contain upper and lower case letters, a number and a special character."
-            );
-        }
-    }
-
+    @Override
     public String requestPasswordReset(String email) {
-        if (!isValidEmail(email)) {
+        if (!emailValidator.isValid(email)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email format");
         }
 
@@ -265,7 +235,7 @@ public class AuthServiceImpl implements AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords do not match");
         }
 
-        validatePasswordStrength(request.getNewPassword());
+        passwordValidator.validate(request.getNewPassword());
 
         String email = tokenProvider.getEmailFromToken(token);
         if (email == null) {
@@ -289,7 +259,7 @@ public class AuthServiceImpl implements AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid current password");
         }
 
-        validatePasswordStrength(request.getNewPassword());
+        passwordValidator.validate(request.getNewPassword());
 
         userService.updatePasswordByEmail(email, request.getNewPassword());
 
