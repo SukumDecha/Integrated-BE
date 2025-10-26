@@ -15,8 +15,6 @@ public class FileResponse {
     private String originalFilename;
     private String imageUrl;
     private Integer imageViewOrder;
-    private String url;
-    private String base64;
 
     public FileResponse(FileEntity file) {
         this.fileName = file.getStoredFilename();

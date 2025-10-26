@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sit.int202.ecommerce.modules.brand.service.BrandService;
+import sit.int202.ecommerce.modules.brand.service.BrandServiceImpl;
 import sit.int202.ecommerce.modules.brand.dto.request.BrandCreateRequest;
 import sit.int202.ecommerce.modules.brand.dto.response.BrandDetailResponse;
 import sit.int202.ecommerce.modules.brand.dto.response.BrandResponse;
@@ -27,7 +27,7 @@ import java.util.List;
 public class BrandController {
 
     @Autowired
-    private BrandService brandService;
+    private BrandServiceImpl brandService;
 
     @GetMapping
     @Operation(summary = "Get all brands")

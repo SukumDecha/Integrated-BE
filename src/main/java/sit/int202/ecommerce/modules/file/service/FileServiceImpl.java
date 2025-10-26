@@ -45,11 +45,13 @@ public class FileServiceImpl implements FileService {
             MultipartFile file = multipartFiles.get(i);
 
             if (file.getSize() > MAX_FILE_SIZE) {
-                throw new FileUploadException("File exceeds 2MB: " + file.getOriginalFilename());
+//                throw new FileUploadException("File exceeds 2MB: " + file.getOriginalFilename());
+                continue;
             }
 
             savedFiles.add(storeFileAndMetadata(file, refType, refId, i, usageType));
         }
+
         return savedFiles;
     }
 
