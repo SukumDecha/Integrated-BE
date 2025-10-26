@@ -14,6 +14,8 @@ public class CookieUtils {
 
     @Value("${app.cookies.domain}")
     private String domain;
+    @Value("${app.cookies.path}")
+    private String path;
     @Value("${app.env}")
     private String env;
 
@@ -34,7 +36,7 @@ public class CookieUtils {
 
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .domain(domain)
-                .path("/")
+                .path(path)
                 .httpOnly(true)
                 .secure(secure)
                 .sameSite("Strict")
@@ -49,7 +51,7 @@ public class CookieUtils {
 
         ResponseCookie cookie = ResponseCookie.from(name, "")
                 .domain(domain)
-                .path("/")
+                .path(path)
                 .httpOnly(true)
                 .secure(secure)
                 .sameSite("Strict")

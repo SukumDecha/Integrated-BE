@@ -21,4 +21,5 @@ app:
     upload-dir: ${user.dir}/uploads
   cookies:
     domain: localhost
+    path: /
   frontend-url: http://localhost:5173

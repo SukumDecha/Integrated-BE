@@ -21,4 +21,5 @@ app:
     upload-dir: ${user.dir}/uploads
   cookies:
     domain: intproj24.sit.kmutt.ac.th
+    path: /ssa1
   frontend-url: https://intproj24.sit.kmutt.ac.th/ssa1
