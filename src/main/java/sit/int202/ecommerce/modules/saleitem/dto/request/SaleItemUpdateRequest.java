@@ -12,6 +12,7 @@ public class SaleItemUpdateRequest {
 
     private BrandRequest brand;
 
+
     private String model;
 
     @Min(value = 0, message = "Price must be at least 0")
